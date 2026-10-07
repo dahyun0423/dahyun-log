@@ -1,0 +1,95 @@
+export const meta = {
+  title: "Performance·Lighthouse·Rendering — 느린 곳 찾기",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 6,
+  category: "frontend",
+  born: "배포 첫날 노트가 늦게 떴다. '느리다'는 느낌만 있고, 어디가 몇 초 느린지 숫자로 말할 수 없었다.",
+  summary: "LCP·INP·CLS, Record와 Insights, Lighthouse 점수, 다크모드·레이아웃 이동 흉내",
+  minutes: 20,
+  goals: ["Core Web Vitals 세 개를 한 줄씩 말한다", "느린 순간을 녹화해 원인 후보를 찾는다", "다크모드를 개발자 도구로 흉내 낸다"],
+  questions: [
+    "LCP·INP·CLS는 각각 무엇을 재나?",
+    "내 맥에서 빠르다고 끝내면 안 되는 이유",
+    "Lighthouse를 시크릿 창에서 돌리는 이유",
+    "이 사이트를 다크모드로 봤을 때 이상한 곳",
+  ],
+};
+
+## 🎬 장면
+
+"느려요"는 증상일 뿐. **어디가, 몇 초** 느린지 재야 처방할 수 있다. 혈당도 "높은 것 같아요"가 아니라 숫자로 재는 것처럼.
+
+## 🗺 Core Web Vitals — 페이지 건강 수치 세 개
+
+| 수치 | 무엇 | 쉽게 |
+|---|---|---|
+| **LCP** (Largest Contentful Paint) | 가장 큰 내용이 보이기까지 | 첫 화면이 뜨는 속도 |
+| **INP** (Interaction to Next Paint) | 누른 뒤 화면이 반응하기까지 | 버튼 반응 속도 |
+| **CLS** (Cumulative Layout Shift) | 화면이 갑자기 밀린 정도 | 누르려는데 버튼이 내려가는 짜증 |
+
+**Performance** 탭을 열면 첫 화면에 이 셋이 **좋음 / 개선 필요 / 나쁨** 색으로 바로 보인다.
+
+## 🗺 현업에서 읽는 순서
+
+1. Performance 첫 화면 — 셋 중 **무엇이** 나쁜가
+2. 녹화: 로딩이 느리면 **Record and reload**, 클릭이 느리면 **Record** 후 그 동작
+3. 오른쪽 **Insights** — 크롬이 찾아 준 원인 후보부터
+4. **Main** 줄에서 **빨간 삼각형**(50ms 넘는 긴 작업) 찾기
+5. 아래 **Bottom-up** — 시간을 제일 많이 쓴 함수 순서
+
+| 녹화 화면 | 읽는 법 |
+|---|---|
+| 가로 | 시간 |
+| 세로 | 누가 누구를 불렀나 (위가 부른 쪽) |
+| Network 줄 | 요청이 언제 나가고 왔나 |
+| Interactions 줄 | 내 클릭과 그 반응 시간 |
+| Layout shifts 줄 | 화면이 밀린 순간 |
+
+<Callout type="주의">개발용 맥은 너무 빠르다. **⚙ → CPU: Mid-tier mobile**(또는 4x slowdown)로 **느린 폰처럼** 놓고 잰다. `npm run dev`로 켠 화면은 원래 느리니, 배포 사이트에서 잰다.</Callout>
+
+## 🗺 Lighthouse — 종합 건강검진표
+
+- 개발자 도구 → **Lighthouse** → 모드 **Navigation**, 기기 **Mobile** → **Analyze page load**
+- 점수 네 개: **Performance · Accessibility · Best Practices · SEO**
+- **시크릿 창**에서 돌린다 (확장 프로그램이 점수를 흐림)
+- 점수보다 **아래 지적 사항**이 진짜 내용. 하나씩 고친다
+- 원인 추적은 Lighthouse보다 **Performance 녹화**가 정확하다
+
+## 🗺 Rendering — 상황 흉내 내기
+
+**⌘⇧P** → `Show Rendering` 입력 → 아래에 Rendering 탭
+
+| 항목 | 쓰임 |
+|---|---|
+| **Emulate CSS media feature prefers-color-scheme** → dark | 새로고침 없이 **다크모드** 확인 (이 사이트는 다크 색 토큰이 있다) |
+| **prefers-reduced-motion** → reduce | "움직임 줄이기" 설정 사용자 화면 (시뮬레이터 애니메이션이 멈추나) |
+| **Layout Shift Regions** | 화면이 밀릴 때 파랗게 표시 → CLS 범인 |
+| **Paint flashing** | 다시 그려지는 곳을 초록으로 |
+
+## ⚠️ 초보가 자주 하는 실수
+
+- 빠른 맥에서 재고 "빠르네" 끝 → CPU 느리게
+- 확장 프로그램 켜진 창에서 Lighthouse → 시크릿 창
+- 점수 숫자만 보고 녹화(원인)는 안 봄
+- 개발 서버(`npm run dev`)에서 잼 → 배포본에서
+
+## 🛠 손으로
+
+1. 배포 사이트 홈에서 Performance 열기 → LCP 값과 **LCP 요소**(무엇이 제일 크게 그려졌나) 확인
+2. CPU **Mid-tier mobile** → **Record** → 사이드바 폴더 펼치기 → 정지 → Interactions 줄에서 반응 시간
+3. **⌘⇧P → Show Rendering → prefers-color-scheme: dark** → 이 사이트 다크모드에서 글자가 안 보이는 곳 찾기
+4. 시크릿 창에서 Lighthouse (Mobile) → Accessibility 지적 하나를 노트에 옮겨 적기
+
+## 📚 출처
+
+- [Performance panel overview](https://developer.chrome.com/docs/devtools/performance/overview) · [Performance reference](https://developer.chrome.com/docs/devtools/performance/reference) · [Lighthouse in DevTools](https://developer.chrome.com/docs/devtools/lighthouse) · [Emulate CSS media features](https://developer.chrome.com/docs/devtools/rendering/emulate-css)
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="사이트가 느린 것 같은데 어디가 느린지 말을 못 한다"
+  cause="느낌으로만 보고 숫자로 재지 않아서"
+  fix="Performance 첫 화면 LCP·INP·CLS → CPU 느리게 → Record → Insights·긴 작업·Bottom-up"
+/>

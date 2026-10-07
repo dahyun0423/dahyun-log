@@ -1,53 +1,98 @@
 export const meta = {
-  title: "F12 열기와 Elements — 화면 뜯어보기",
+  title: "Elements — 화면을 엑스레이로 찍기",
   track: "basics",
   topic: "devtools",
   week: 0,
   order: 1,
   category: "frontend",
   born: "개발자 도구를 열어 본 적은 있는데, 뭘 봐야 할지 몰라서 바로 닫았다.",
-  summary: "화면의 아무 글자나 골라 HTML과 CSS를 보고, 직접 바꿔 보기",
-  minutes: 10,
-  goals: ["개발자 도구를 단축키로 연다", "원하는 요소를 골라 HTML·CSS를 본다", "CSS 값을 바꿔 결과를 바로 본다"],
-  questions: ["개발자 도구를 여는 단축키 3개", "Elements에서 바꾼 건 새로고침하면 왜 사라질까?", "이 사이트의 파란색은 어떤 CSS 변수에서 왔나?"],
+  summary: "Styles·Computed 읽는 순서, :hov, 박스 모델, grid/flex 배지, 모바일 흉내, 접근성",
+  minutes: 20,
+  goals: ["⌘⇧C로 요소를 콕 집는다", "Styles에서 이긴 규칙과 진 규칙을 구분한다", "모바일 폭에서 넘치는 요소를 찾는다"],
+  questions: [
+    "Styles와 Computed의 차이",
+    "취소선이 그어진 CSS 값은 무슨 뜻인가?",
+    "모바일에서 가로 스크롤이 생길 때 찾는 순서",
+    "Elements에서 고친 게 새로고침하면 사라지는 이유",
+  ],
 };
 
 ## 🎬 장면
 
-개발자 도구 = **병원의 엑스레이**다. 겉(화면)만 보지 말고 속(HTML·CSS·요청)을 찍어 본다.
-아무것도 망가뜨리지 않는다. 바꿔도 **내 화면에서만, 새로고침하면 원래대로**.
+개발자 도구 = **병원 엑스레이실**. 겉(화면)만 보지 말고 속을 찍는다.
+Elements는 그중 **뼈대(HTML)와 피부(CSS)** 를 찍는 기계다. 아무것도 망가뜨리지 않는다.
 
-## 🛠 여는 법 (맥 기준)
+## 🗺 먼저 외울 단축키
 
-| 단축키 | 열리는 곳 |
-|---|---|
-| **⌥⌘I** | 개발자 도구 (마지막에 보던 탭) |
-| **⌘⇧C** | 요소 고르기 모드 — 화면을 눌러 그 요소로 바로 이동 |
-| **⌥⌘J** | Console 탭 |
+| 하는 일 | 맥 | 윈도우 |
+|---|---|---|
+| 개발자 도구 열기 | **⌥⌘I** | F12 / Ctrl+Shift+I |
+| 요소 고르기 모드 | **⌘⇧C** | Ctrl+Shift+C |
+| 모바일 화면 흉내 (Device toolbar) | **⌘⇧M** | Ctrl+Shift+M |
+| 명령 메뉴 (모든 기능 검색) | **⌘⇧P** | Ctrl+Shift+P |
+| 전체 파일에서 글자 찾기 | **⌥⌘F** | Ctrl+Shift+F |
 
-윈도우는 F12, Ctrl+Shift+C, Ctrl+Shift+J.
+## 🗺 무엇을 보여주나
 
-## 🛠 손으로 — 3분 실습
+- 왼쪽: **지금 화면에 그려진 DOM 트리**. 서버가 보낸 HTML 원본이 아니라 React(JS)가 바꾼 **결과**다
+- 오른쪽 **Styles**: 고른 요소에 걸린 **모든** CSS 규칙
+- 오른쪽 **Computed**: 결국 **실제로 적용된 값만**. 박스 모델 그림도 여기
 
-1. **⌘⇧C**를 누르고 이 레슨 제목을 클릭 → 왼쪽에 `<h1 ...>`이 파랗게 선택된다
-2. `<h1>` 안의 글자를 더블클릭해서 아무 말로 바꿔 본다 → 화면 제목이 바뀐다
-3. 오른쪽 **Styles** 칸에서 `font-size` 값을 클릭해 숫자를 바꿔 본다
-4. 사이드바의 파란 점(노트 쓴 레슨)을 골라 **Styles**에서 `background-color`를 찾는다 → `var(--primary)`가 보인다
-5. **새로고침(⌘R)** → 전부 원래대로 돌아온다
+## 🗺 현업에서 읽는 순서
 
-<Callout type="핵심">Elements에서 바꾼 건 **내 브라우저 메모리**에만 있다. 진짜로 바꾸려면 코드(`globals.css` 같은 파일)를 고쳐야 한다.</Callout>
+1. **⌘⇧C** → 문제 있는 요소를 클릭
+2. **Styles를 위에서부터** — 위에 있을수록 이긴 규칙. **취소선** = 다른 규칙에 져서 적용 안 된 값
+3. **Computed**에서 최종값 확인 (Styles가 헷갈리면 여기가 정답)
+4. 배치 문제면 DOM 옆 **grid / flex 배지**를 눌러 겹쳐 보기
 
-## 🗺 Styles 칸 읽는 법
+<Callout type="핵심">"색이 안 바뀌어요"의 90%는 다른 규칙에 지고 있는 것이다. 취소선을 찾고, 선택자 위에 마우스를 올리면 **명시도(specificity)** 가 툴팁으로 보인다.</Callout>
 
-- 위에 있는 규칙일수록 **이긴다** (나중에 적용된 것)
-- 줄이 그어진 값 = 다른 규칙에 **져서** 적용 안 된 값
-- `var(--primary)` 같은 변수는 클릭하면 실제 색이 보인다
-- **Computed** 탭 = 최종적으로 적용된 값만 모아 보기
+## 🛠 꼭 알아야 할 기능 (화면에 적힌 이름 그대로)
+
+| 기능 | 어디 | 언제 쓰나 |
+|---|---|---|
+| **:hov** | Styles 위 | `:hover` `:focus` `:active` `:focus-visible` 등을 **강제로 켜기**. 마우스를 올려야만 보이는 스타일 확인 |
+| **.cls** | Styles 위 | 클래스를 붙였다 뗐다 (Tailwind 클래스 실험) |
+| **element.style** | Styles 맨 위 | 클릭해서 CSS 한 줄 바로 추가 |
+| 값 조절 키 | 숫자 값 선택 후 | ↑↓ ±1 · **Option+↑** ±0.1 · **Shift+↑** ±10 |
+| 체크박스 | 각 선언 옆 | 그 줄만 껐다 켜기 |
+| 박스 모델 그림 | Computed | margin(주황)·border·padding(초록)·content(파랑) 크기 |
+| **grid / flex** 배지 | DOM 트리 요소 옆 | 눌러서 격자·정렬선 겹쳐 보기 |
+| **scroll** 배지 | DOM 트리 | 이 요소가 넘쳐서 스크롤이 생김 (가로 스크롤 범인 찾기) |
+| **Layout** 탭 | Styles 옆 | grid 줄 이름·트랙 크기 표시 |
+| **Accessibility** 탭 | Styles 옆 | 화면 낭독기가 읽는 이름(Name)·역할 확인 |
+| **Break on** | 노드 우클릭 | 이 요소가 바뀌는 순간 코드 멈추기 (Sources 카드) |
+
+### 📱 Device toolbar (⌘⇧M)
+
+- 위쪽 **Dimensions**에서 **Responsive** 또는 기기 고르기
+- 폭 프리셋: Mobile S **320** · M **375** · L **425** · Tablet **768** · Laptop **1024**
+- **⋮ → Show media queries**: 내 CSS가 어디서 꺾이는지 막대로 보임
+- **Throttle**: 느린 휴대폰 흉내 · **Capture full size screenshot**: 페이지 전체 캡처
+
+<Callout type="주의">Device Mode는 **1차 근사**다. 휴대폰의 CPU·터치까지 똑같지 않다. 마지막 확인은 실제 폰으로.</Callout>
+
+## ⚠️ 초보가 자주 하는 실수
+
+- Elements에서 고친 걸 저장된 줄 안다 → **새로고침하면 사라진다**. 찾은 값을 코드 파일에 옮겨야 진짜 반영
+- Styles에 보인다고 적용된 줄 안다 → 최종값은 **Computed**
+- 모바일 문제를 데스크톱 폭에서만 본다 → ⌘⇧M부터
+
+## 🛠 손으로 (이 사이트에서)
+
+1. **⌘⇧C** → 사이드바의 레슨 줄 하나 클릭 → Styles 위 **:hov** → `:hover` 체크 → 회색 배경이 고정되는지
+2. 사이드바 파란 점 고르기 → Styles에서 `background-color: var(--primary)` 찾기 → 변수 위에 마우스 → 실제 색 `#3182f6`
+3. **⌘⇧M** → Responsive → 폭을 **320**까지 줄이기 → 화면이 "배우기/기록하기" 탭으로 바뀌는 지점 찾기 → **Show media queries**로 그 경계(768px) 확인
+4. 레슨 제목 `<h1>` 글자를 더블클릭해 바꿔 보고 **⌘R** → 원래대로
+
+## 📚 출처
+
+- [CSS features reference](https://developer.chrome.com/docs/devtools/css/reference) · [Badges](https://developer.chrome.com/docs/devtools/elements/badges) · [Device Mode](https://developer.chrome.com/docs/devtools/device-mode) · [Keyboard shortcuts](https://developer.chrome.com/docs/devtools/shortcuts)
 
 ## ✍️ 내 말로
 
 <Diagnosis
-  symptom="개발자 도구를 열면 글자가 너무 많아서 닫게 된다"
-  cause="전체를 다 읽으려고 해서"
-  fix="⌘⇧C로 궁금한 한 곳만 콕 집어서 그 요소의 HTML·CSS만 본다"
+  symptom="CSS를 고쳤는데 색이 안 바뀐다 / 모바일에서 가로로 밀린다"
+  cause="다른 규칙에 지고 있거나(취소선), 폭보다 넓은 요소가 있다(scroll 배지)"
+  fix="⌘⇧C → Styles 취소선·명시도 → Computed 최종값 / ⌘⇧M 320px → scroll 배지·박스 모델"
 />
