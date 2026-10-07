@@ -1,0 +1,66 @@
+export const meta = {
+  title: "npm과 package.json — npm run dev는 무엇을 실행하나",
+  track: "basics",
+  topic: "dev",
+  week: 0,
+  order: 2,
+  category: "frontend",
+  born: "`npm run dev`, `npm install`을 시키는 대로 쳤지만, 그게 뭘 하는지 설명할 수 없었다.",
+  summary: "dependencies, scripts, node_modules, package-lock.json",
+  minutes: 10,
+  goals: ["package.json의 세 덩어리를 읽는다", "npm run 뒤 이름이 어디서 오는지 안다", "node_modules를 git에 안 올리는 이유를 안다"],
+  questions: ["npm run dev를 치면 실제로 실행되는 명령은?", "dependencies와 devDependencies의 차이", "node_modules를 지우면 어떻게 되돌리나?"],
+};
+
+## 🎬 장면
+
+npm = **약품 도매상**. package.json = **우리 병원 약품 주문서**.
+"이 병원은 react 19, next 16이 필요해요"라고 적어 두면, `npm install`이 그대로 받아 와 `node_modules` 창고에 넣는다.
+
+## 🗺 package.json 세 덩어리
+
+```json
+{
+  "scripts": {
+    "dev": "next dev",          ← npm run dev 를 치면 이게 실행됨
+    "build": "next build",
+    "lint": "eslint"
+  },
+  "dependencies": {             ← 서비스가 돌아갈 때 필요한 약
+    "next": "16.4.0",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {          ← 만들 때만 필요한 도구 (검사기, 타입)
+    "eslint": "^9",
+    "typescript": "^5"
+  }
+}
+```
+
+| 명령 | 하는 일 |
+|---|---|
+| `npm install` | 주문서대로 전부 받아 오기 |
+| `npm install 이름` | 새 약 추가 + 주문서에 적기 |
+| `npm run 이름` | scripts에 적힌 명령 실행 |
+
+- `^3.4.9` = "3.x.x 중 3.4.9 이상" (큰 버전은 고정)
+- **package-lock.json** = 실제로 받은 정확한 버전 기록. 같이 커밋한다 → 승민님 컴퓨터에서도 똑같은 버전
+- **node_modules** = 받아 온 약 창고. 수만 개 파일이라 git에 **안 올린다** (`.gitignore`). 지워도 `npm install`이면 복구
+
+<Callout type="주의">친구 레포 중 node_modules가 24,206개 커밋된 곳이 있었다. `.gitignore`부터 확인하는 습관.</Callout>
+
+## 🛠 손으로
+
+```bash
+cat package.json      # scripts에 뭐가 있나?
+npm run lint          # 코드 검사기 실행 — 결과가 조용하면 통과
+npm ls next           # 실제로 설치된 next 버전
+```
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="npm 명령을 치긴 하는데 뭘 하는지 모른다"
+  cause="package.json을 열어 본 적이 없어서"
+  fix="npm run X = package.json scripts의 X 줄. install = 주문서대로 node_modules 채우기"
+/>

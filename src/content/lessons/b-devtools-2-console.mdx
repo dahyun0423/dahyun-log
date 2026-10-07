@@ -1,0 +1,109 @@
+export const meta = {
+  title: "Console — 증상 메모 읽기와 직접 물어보기",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 2,
+  category: "frontend",
+  born: "화면이 이상할 때 Console에 빨간 글씨가 잔뜩 있었는데, 무서워서 그냥 닫았다.",
+  summary: "에러 읽는 순서, 필터, Preserve log, $0·$_·copy()·console.table, Live Expression, CORS",
+  minutes: 20,
+  goals: ["에러에서 '종류·무엇이·어디서'를 찾는다", "Console에서 API를 직접 불러 표로 본다", "페이지를 옮겨도 로그를 남긴다"],
+  questions: [
+    "빨간 에러를 읽는 순서 3단계",
+    "$0, $_, copy()는 각각 무엇인가?",
+    "Preserve log를 켜야 하는 상황",
+    "CORS 에러는 프론트 문제일까 서버 문제일까?",
+  ],
+};
+
+## 🎬 장면
+
+Console = **진료 기록에 남는 증상 메모 + 직접 물어볼 수 있는 상담 창구**.
+빨간 글씨는 무서운 게 아니라 "여기가 아파요"라는 메모다. 그리고 여기서 자바스크립트를 **바로 실행**할 수 있다.
+
+열기: **⌥⌘J** (윈도우 Ctrl+Shift+J) · 비우기: **⌘K**
+
+## 🗺 무엇을 보여주나
+
+| 종류 | 색 | 뜻 |
+|---|---|---|
+| **Error** | 빨강 | 고장. 코드가 멈춤 |
+| **Warning** | 노랑 | 당장 고장은 아니지만 조심 |
+| **Info / Verbose** | 회색 | 참고·자세한 기록 (Verbose는 기본으로 숨김) |
+
+네트워크 실패, **CORS** 에러도 여기 뜬다.
+
+## 🗺 현업에서 에러 읽는 순서
+
+```text
+Uncaught TypeError: Cannot read properties of undefined (reading 'title')
+    at NoteRow (Sidebar.tsx:42:18)
+    at renderWithHooks (react-dom...)
+```
+
+1. **맨 앞 단어 = 종류** — `TypeError` = 없는 것(undefined)을 쓰려 함, `ReferenceError` = 없는 이름, `SyntaxError` = 문법
+2. **콜론 뒤 = 무엇이** — undefined에서 `title`을 읽으려 했다
+3. **at … 맨 위 중 내 파일** — `Sidebar.tsx:42` **클릭하면 그 줄로**. react-dom 같은 라이브러리 줄은 건너뛴다
+4. 같은 에러가 여러 번이면 **처음 것**부터
+
+<Callout type="핵심">"안 돼요" 대신 에러 첫 줄을 통째로 복사해서 검색하거나 물어보면 반은 해결된다.</Callout>
+
+## 🛠 꼭 알아야 할 기능
+
+| 기능 | 어디 | 언제 |
+|---|---|---|
+| 레벨 필터 | 위쪽 **Default levels** | Error만 보기. ⚠️ 필터를 걸어 둔 채 "에러 없다"고 착각 주의 |
+| 글자 필터 | 위쪽 **Filter** 칸 | `notes` 같은 단어·정규식으로 거르기 |
+| **Preserve log** | ⚙ 설정 | 페이지를 옮겨도(로그인 → 이동) 로그 유지 |
+| **Hide network** | ⚙ 설정 | 네트워크 메시지 숨기기 |
+| **Create live expression** (👁) | 위쪽 눈 아이콘 | 식을 위에 고정, **0.25초마다** 값 갱신 |
+| 결과 우클릭 | 출력값 위 | **Copy as JSON literal** 등 |
+
+### 🧰 Console 전용 도구 (Console에서만 됨)
+
+| 쓰기 | 뜻 |
+|---|---|
+| `$0` | Elements에서 **방금 고른 요소** (`$1`~`$4` = 그 전 것들) |
+| `$_` | **바로 전에 실행한 결과** |
+| `$('.x')` / `$$('.x')` | 요소 하나 / 여러 개 찾기 |
+| `copy(값)` | 클립보드로 복사 |
+| `console.table(배열)` | 배열을 **표로** |
+| `getEventListeners($0)` | 그 요소에 붙은 클릭 같은 이벤트 확인 (React는 이벤트를 화면 맨 바깥 root에 몰아 붙여서, 버튼 하나만 보면 비어 있을 수 있다) |
+| `await fetch(...)` | 맨 바깥에서 바로 `await` 가능 |
+
+## ⚠️ 초보가 자주 하는 실수
+
+- 로그인 후 페이지가 바뀌면서 로그가 사라짐 → **Preserve log**
+- CORS 에러를 프론트 버그로 착각 → 실제로는 **서버 응답 헤더** 문제 (당당: React ↔ Spring/FastAPI가 주소가 다를 때 자주)
+- 배포 사이트 에러가 `page-3f2a.js:1` 같은 **압축 파일**만 가리킴 → Next.js는 배포본에 원본 코드 지도(소스맵)를 기본으로 안 내보낸다. 로컬에서 재현해서 본다
+- 남이 보내 준 코드를 Console에 그냥 붙여 넣음 → **내 로그인 상태로 실행된다**. 뜻을 아는 코드만
+
+## 🛠 손으로 (로그인한 상태에서)
+
+```js
+// 1) 내 노트 목록을 표로 보기
+const r = await fetch("/api/notes"); console.table(await r.json())
+
+// 2) 방금 결과를 클립보드로
+copy($_)
+
+// 3) Elements에서 사이드바 링크 하나 고른 뒤
+$0.textContent
+getEventListeners($0)
+```
+
+4. 👁 **Create live expression** → `localStorage.getItem("learn-note-open")` → 레슨 화면에서 노트를 **›** 로 접었다 펴며 값이 바뀌는지
+5. ⚙ **Preserve log** 켜고 로그아웃 → 로그인. 이동 전 로그가 남는지
+
+## 📚 출처
+
+- [Console features reference](https://developer.chrome.com/docs/devtools/console/reference) · [Console Utilities API](https://developer.chrome.com/docs/devtools/console/utilities) · [Live expressions](https://developer.chrome.com/docs/devtools/console/live-expressions) · [Next.js productionBrowserSourceMaps](https://nextjs.org/docs/app/api-reference/config/next-config-js/productionBrowserSourceMaps)
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="Console이 빨간 글씨로 가득한데 뭐부터 봐야 할지 모른다"
+  cause="전부 읽으려 하고, 무섭다고 닫아서"
+  fix="맨 위 Error 하나만: 종류 → 무엇이 → at 중 내 파일 클릭. 페이지 이동이 끼면 Preserve log"
+/>
