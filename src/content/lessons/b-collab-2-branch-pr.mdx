@@ -10,6 +10,10 @@ export const meta = {
   minutes: 10,
   goals: ["브랜치 세 종류의 역할을 말한다", "PR 화면에서 base·compare를 먼저 확인한다", "배너가 없을 때 주소로 PR을 연다"],
   questions: ["main·develop·feature/* 각각 무엇을 위한 곳인가", "base와 compare 중 '받는 쪽'은?", "Compare & pull request 배너가 안 뜰 때 PR 여는 주소"],
+  quiz: [
+    { q: "PR 화면의 base는?", choices: ["보내는 쪽", "받는 쪽", "원격 저장소 이름", "커밋 개수"], answer: 1, why: "base ← compare." },
+    { q: "Compare & pull request 배너가 안 뜰 때 PR을 여는 주소 형식은?", choices: ["/pull/new", "/compare/받는쪽...보내는쪽", "/branches", "/settings"], answer: 1, why: "예) /compare/develop...feature/x" },
+  ],
 };
 
 ## 🎬 장면

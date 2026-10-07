@@ -10,6 +10,11 @@ export const meta = {
   minutes: 15,
   goals: ["비밀값을 코드 대신 환경 변수에 둔다", "development·preview·production을 구분한다", "비밀값을 화면에 찍지 않고 확인한다"],
   questions: ["환경 변수를 쓰는 이유 두 가지", "로컬은 되는데 배포에서 안 될 때 환경 변수 쪽에서 확인할 것", "비밀값을 '보지 않고' 맞는지 확인하는 방법"],
+  quiz: [
+    { q: "비밀번호·DB 주소를 두는 곳으로 알맞은 것은?", choices: ["코드 상수", "환경 변수(.env.local, Vercel env)", "README", "커밋 메시지"], answer: 1, why: "코드는 공개될 수 있다." },
+    { q: "Vercel에서 환경 변수 값을 바꾼 뒤 반영하려면?", choices: ["아무것도 안 해도 됨", "다시 배포", "브라우저 새로고침", "git pull"], answer: 1, why: "로컬은 dev 서버 재시작." },
+    { q: "비밀값을 '보지 않고' 확인하는 방법은?", choices: ["채팅에 붙여 넣기", "길이·앞뒤 공백·시작·끝 형식만 검사", "스크린샷", "로그에 출력"], answer: 1, why: "scripts/check-env.mjs가 그 역할." },
+  ],
 };
 
 ## 🎬 장면

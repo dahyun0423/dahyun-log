@@ -15,6 +15,11 @@ export const meta = {
     "Preserve log를 켜야 하는 상황",
     "CORS 에러는 프론트 문제일까 서버 문제일까?",
   ],
+  quiz: [
+    { q: "Console에서 $0은 무엇?", choices: ["첫 번째 로그", "Elements에서 방금 고른 요소", "가장 최근 에러", "window 객체"], answer: 1, why: "$1~$4는 그 전에 골랐던 요소들." },
+    { q: "로그인 후 페이지가 바뀌면서 로그가 사라진다. 켜야 할 것은?", choices: ["Disable cache", "Preserve log", "Hide network", "Verbose"], answer: 1, why: "페이지 이동에도 로그를 남긴다." },
+    { q: "CORS 에러의 원인은 주로 어디에 있나?", choices: ["CSS", "서버의 응답 헤더(Access-Control-*)", "HTML 태그", "브라우저 확대 비율"], answer: 1, why: "프론트에서 no-cors로 피하면 응답을 못 읽게 될 뿐." },
+  ],
 };
 
 ## 🎬 장면

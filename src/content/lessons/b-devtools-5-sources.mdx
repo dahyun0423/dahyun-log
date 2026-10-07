@@ -15,6 +15,11 @@ export const meta = {
     "Step over와 Step into의 차이",
     "Call Stack은 무엇을 보여주나",
   ],
+  quiz: [
+    { q: "멈추지 않고 Console에 값만 기록하는 브레이크포인트는?", choices: ["조건부 브레이크포인트", "Logpoint", "DOM 브레이크포인트", "예외 브레이크포인트"], answer: 1, why: "console.log를 코드에 안 넣어도 된다." },
+    { q: "'이 fetch를 누가 불렀지?'를 찾는 가장 직접적인 방법은?", choices: ["XHR/fetch Breakpoints에 주소 일부 등록 후 Call Stack 보기", "모든 파일 읽기", "Elements 보기", "새로고침 반복"], answer: 0, why: "멈춘 순간 Call Stack이 호출 경로를 보여준다." },
+    { q: "Step over와 Step into의 차이는?", choices: ["같다", "over는 함수 안으로 안 들어가고, into는 들어간다", "into는 뒤로 간다", "over는 끝까지 실행"], answer: 1, why: "React 내부로 자꾸 들어가면 ignore list." },
+  ],
 };
 
 ## 🎬 장면
