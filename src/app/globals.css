@@ -207,3 +207,38 @@ body {
   outline: 2px solid var(--line-focus);
   outline-offset: 2px;
 }
+
+/* ---------- 레슨 ---------- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 섹션 제목 앞에 01, 02 … 번호 자동으로 붙이기 */
+.lesson {
+  counter-reset: section;
+}
+.lesson h2::before {
+  counter-increment: section;
+  content: counter(section, decimal-leading-zero);
+  margin-right: 10px;
+  font-size: 15px;
+  color: var(--primary);
+}
+
+/* 스크롤해서 화면에 들어올 때 살짝 떠오르기 (CSS만으로, 지원 안 되면 그냥 보임) */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .lesson > * {
+      animation: fade-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 30%;
+    }
+  }
+}

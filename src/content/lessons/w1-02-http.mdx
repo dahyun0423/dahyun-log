@@ -1,9 +1,15 @@
 export const meta = {
-  title: "API 요청 하나가 서버까지 가는 길",
+  title: "주문서는 어떻게 생겼나 — HTTP",
   week: 1,
   order: 2,
   category: "server",
-  summary: "HTTP 요청·응답의 생김새와 REST, 상태 코드",
+  summary: "요청·응답의 생김새, 메서드, 상태 코드, REST",
+  minutes: 30,
+  goals: [
+    "HTTP 요청의 4부분(메서드·경로·헤더·본문)을 짚을 수 있다",
+    "GET·POST·PUT·DELETE를 언제 쓰는지 안다",
+    "상태 코드를 보고 누구 잘못인지(4xx/5xx) 구분한다",
+  ],
   questions: [
     "HTTP 요청은 어떤 4부분으로 되어 있나?",
     "GET·POST·PUT·DELETE를 내 노트 API로 예를 들면?",
@@ -12,75 +18,122 @@ export const meta = {
   ],
 };
 
-## 한 줄로
+## 주문서에도 양식이 있어요
 
-**HTTP는 "이 주소에, 이 방법으로, 이걸 해줘"라는 정해진 형식의 편지다.** 서버는 같은 형식으로 답장한다.
+지난 레슨에서 API를 **주문서**라고 했죠. 웹에서 이 주문서의 양식 이름이 **HTTP**예요.
+양식이 정해져 있으니 어떤 홀(브라우저, 앱)이든 어떤 주방(Spring, FastAPI)이든 서로 알아들어요.
 
-## 요청의 생김새
+<Analogy
+  pairs={[
+    { from: "무엇을 해달라", to: "메서드", desc: "GET 보여줘 · POST 새로 만들어줘 · PUT 통째로 바꿔줘 · DELETE 지워줘" },
+    { from: "어떤 메뉴를", to: "경로", desc: "/api/notes/abc — 노트 중에 abc" },
+    { from: "주문서 귀퉁이 메모", to: "헤더", desc: "내용 형식, 누가 보냈는지(로그인 토큰) 같은 부가 정보" },
+    { from: "주문 내용", to: "본문(body)", desc: "실제 데이터. 보통 JSON. 조회(GET)에는 없어요." },
+  ]}
+/>
+
+## 실제 주문서 한 장
+
+오른쪽 노트에 글자를 칠 때마다 이 사이트가 실제로 보내는 요청이에요.
 
 ```http
-PUT /api/notes/w1-02-http HTTP/1.1      ← 메서드 + 경로
-Host: localhost:3123                     ← 헤더 (부가 정보)
-Content-Type: application/json           ← "본문은 JSON이야"
+PUT /api/notes/w1-02-http HTTP/1.1       ← 메서드 + 경로
+Host: localhost:3123                      ← 헤더
+Content-Type: application/json            ← 헤더: "본문은 JSON이에요"
 
-{"title": "...", "blocks": [...]}        ← 본문(body)
+{"title": "...", "blocks": [...]}         ← 본문
 ```
 
-- **메서드**: 무엇을 할지 (GET 읽기, POST 만들기, PUT 통째로 바꾸기, PATCH 일부 바꾸기, DELETE 지우기)
-- **경로**: 무엇에 대해 (`/api/notes/w1-02-http` = 노트 중 w1-02-http)
-- **헤더**: 형식, 인증 토큰, 쿠키 같은 부가 정보
-- **본문**: 실제 데이터 (GET에는 보통 없다)
-
-## 응답의 생김새
+답장(응답)은 이렇게 생겼어요. 맨 위 **상태 코드**가 "어떻게 됐는지"를 숫자로 알려줘요.
 
 ```http
-HTTP/1.1 200 OK                          ← 상태 코드
+HTTP/1.1 200 OK
 Content-Type: application/json
 
 {"updatedAt": "2026-10-08T12:00:00.000Z"}
 ```
 
-| 코드 | 뜻 | 이 사이트에서 |
-|---|---|---|
-| 200 | 성공 | 노트 읽기·저장 성공 |
-| 201 | 새로 만들었음 | ＋ 새 페이지 |
-| 400 | 요청이 이상함 | id에 대문자나 `/`가 들어감 |
-| 401 | 누군지 모름 (로그인 필요) | 당당의 로그인 안 한 요청 |
-| 403 | 누군지는 알지만 권한 없음 | 배포 사이트에서 저장 시도 |
-| 404 | 없음 | 아직 안 쓴 노트 |
-| 500 | 서버가 터짐 | 서버 코드 버그 |
+## 성공할 때와 실패할 때
 
-**4xx는 요청한 쪽 잘못, 5xx는 서버 잘못**으로 기억하면 된다.
+같은 주문서라도 내용에 따라 결과가 달라져요. 두 개를 차례로 돌려 보세요.
 
-## REST는 주소 짓는 규칙
+<FlowSim
+  title="노트 저장 — 성공"
+  startLabel="저장 요청 보내기"
+  nodes={[
+    { id: "fe", label: "홀", sub: "노트 에디터" },
+    { id: "api", label: "주문서", sub: "PUT 요청" },
+    { id: "be", label: "주방", sub: "route.ts" },
+    { id: "db", label: "냉장고", sub: "notes/ 파일" },
+  ]}
+  steps={[
+    { at: "fe", say: "글자를 치고 0.8초가 지났어요. 저장할 때예요." },
+    { at: "api", say: "PUT 주문서를 보내요.", packet: "PUT /api/notes/w1-02-http\nContent-Type: application/json\n\n{ \"title\": \"...\", \"blocks\": [...] }" },
+    { at: "be", say: "주방이 검사해요. id에 소문자·숫자·하이픈만 있나? 본문에 blocks가 있나? → 통과" },
+    { at: "db", say: "notes/w1-02-http.json 과 .md 파일에 써요." },
+    { at: "api", say: "성공 답장이 돌아가요.", packet: "200 OK\n{ \"updatedAt\": \"2026-10-08T12:00:00.000Z\" }", tone: "ok" },
+    { at: "fe", say: "오른쪽 위에 '저장됨'이 떠요." },
+  ]}
+/>
 
-주소에는 **명사(자원)**, 행동은 **메서드**로 표현한다.
+<FlowSim
+  title="노트 저장 — 잘못된 주문서"
+  startLabel="잘못된 요청 보내기"
+  nodes={[
+    { id: "fe", label: "홀", sub: "curl" },
+    { id: "api", label: "주문서", sub: "PUT 요청" },
+    { id: "be", label: "주방", sub: "route.ts" },
+    { id: "db", label: "냉장고", sub: "notes/ 파일" },
+  ]}
+  steps={[
+    { at: "fe", say: "누군가 id에 대문자를 넣어서 보내요." },
+    { at: "api", say: "주문서가 주방으로 가요.", packet: "PUT /api/notes/ABC" },
+    { at: "be", say: "주방이 검사해요. 대문자는 허용 안 함 → 여기서 멈춰요. 냉장고는 건드리지도 않아요.", tone: "error" },
+    { at: "api", say: "실패 답장이 돌아가요. 4로 시작하면 '보낸 쪽 잘못'이에요.", packet: "400 Bad Request\n{ \"message\": \"잘못된 id\" }", tone: "error" },
+    { at: "fe", say: "보낸 쪽이 주문서를 고쳐서 다시 보내야 해요." },
+  ]}
+/>
 
-- 좋음: `PUT /api/notes/abc`
-- 나쁨: `POST /api/saveNote?id=abc`
+## 상태 코드 읽는 법
 
-당당 계획서의 API도 이 규칙을 따른다. 예: `POST /visits/{id}/reports` = "이 진료(visit)에 리포트를 새로 만든다".
+| 코드 | 뜻 | 식당으로 치면 | 이 사이트에서 |
+|---|---|---|---|
+| 200 | 성공 | 주문 완료 | 노트 읽기·저장 |
+| 201 | 새로 만듦 | 신메뉴 등록 완료 | ＋ 새 페이지 |
+| 400 | 요청이 이상함 | 주문서를 못 알아봄 | id에 대문자 |
+| 401 | 누군지 모름 | "회원이세요?" | (당당) 로그인 안 함 |
+| 403 | 권한 없음 | "직원만 들어갈 수 있어요" | 배포 사이트에서 저장 |
+| 404 | 없음 | 없는 메뉴 | 아직 안 쓴 노트 |
+| 500 | 서버 오류 | 주방에 불남 | 서버 코드 버그 |
+
+<Callout type="핵심">**4xx는 보낸 쪽 잘못, 5xx는 주방 잘못.** 이것만 기억해도 디버깅 방향이 정해져요.</Callout>
+
+## 주소 짓는 규칙 — REST
+
+주소에는 **무엇(명사)**, 행동은 **메서드**로 나눠 적어요.
+
+- 좋음: `PUT /api/notes/abc` — "노트 abc를 바꿔줘"
+- 나쁨: `POST /api/saveNote?id=abc` — 행동이 주소에 섞임
+
+당당 계획서의 `POST /visits/{id}/reports`도 같은 규칙이에요. "이 진료(visit)에 리포트를 새로 만들어줘".
 
 ## 직접 해보기 (터미널)
 
-사이트가 켜진 상태(`npm run dev -- -p 3123`)에서:
+사이트가 켜진 상태에서 터미널에 쳐 보세요. `-i`는 답장의 상태 코드와 헤더까지 보여줘요.
 
 ```bash
-# 1) 읽기 — 응답 헤더까지 보려면 -i
+# 1) 읽기 — 아직 안 썼으면 404, 썼으면 200
 curl -i localhost:3123/api/notes/w1-02-http
 
-# 2) 잘못된 id → 몇 번이 나올까?
+# 2) 잘못된 주문서 — 몇 번이 나올까?
 curl -i localhost:3123/api/notes/ABC
 
-# 3) 저장하기 (PUT) — 저장 후 이 페이지를 새로고침해 보기
+# 3) 터미널에서 노트 만들기 — 사이드바 '내 페이지'에 생겨요
 curl -i -X PUT localhost:3123/api/notes/curl-test \
   -H "Content-Type: application/json" \
   -d '{"title":"curl로 만든 노트","lesson":null,"blocks":[],"markdown":"hello"}'
 ```
 
-3번을 하면 사이드바 "내 페이지"에 노트가 생긴다. 확인했으면 `notes/curl-test.*` 파일을 지운다.
+3번은 확인 후 `notes/curl-test.*` 파일을 지워요.
 
-## 더 읽을 것
-
-- [MDN — HTTP 개요](https://developer.mozilla.org/ko/docs/Web/HTTP/Overview)
-- [MDN — HTTP 상태 코드](https://developer.mozilla.org/ko/docs/Web/HTTP/Status)
+<KeySentence note="상태 코드 첫 자리만 봐도 누구 문제인지 보여요.">4로 시작하면 내가 잘못 보냈고, 5로 시작하면 서버가 잘못했다</KeySentence>

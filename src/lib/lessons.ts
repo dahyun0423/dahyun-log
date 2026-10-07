@@ -9,6 +9,8 @@ export type LessonMeta = {
   order: number; // 같은 주 안에서의 순서
   category: CategorySlug;
   summary: string;
+  minutes: number; // 예상 소요 시간
+  goals: string[]; // "이 레슨을 마치면" 목록
   questions: string[]; // 노트 쪽에 미리 깔아줄 질문
 };
 
