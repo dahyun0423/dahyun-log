@@ -1,0 +1,71 @@
+export const meta = {
+  title: "Network — 의뢰서 한 장씩 읽기",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 2,
+  category: "server",
+  born: "배포 사이트에서 노트가 '불러오는 중'에서 멈췄을 때, 요청이 갔는지 안 갔는지조차 확인할 줄 몰랐다.",
+  summary: "요청 목록 거르기, 상태·시간 보기, 보낸 것과 받은 것 열어 보기",
+  minutes: 15,
+  goals: ["Fetch/XHR로 API 요청만 거른다", "상태 코드와 걸린 시간을 읽는다", "Payload와 Response를 열어 본다"],
+  questions: ["노트 저장 요청의 메서드·상태 코드·걸린 시간은?", "Payload와 Response의 차이", "요청이 '(pending)'으로 오래 남아 있으면 무슨 뜻일까?"],
+};
+
+## 🎬 장면
+
+Network 탭은 **창구와 진료실 사이를 오가는 의뢰서 전부의 복사본**이다.
+"요청이 갔나? 답이 왔나? 몇 초 걸렸나?" — 여기 다 있다.
+
+## 🛠 손으로 — 노트 저장 의뢰서 잡기
+
+1. **⌥⌘I** → **Network** 탭
+2. 위쪽 필터에서 **Fetch/XHR** 클릭 → 이미지·글꼴은 빠지고 API 요청만 남는다
+3. 오른쪽 노트에 한 줄 쓰고 **Enter**
+4. 목록에 `b-devtools-2-network`(이 카드의 노트 id) 요청이 생긴다. 줄을 보면:
+
+| 칸 | 뜻 |
+|---|---|
+| Name | 경로 끝부분 (어떤 차트) |
+| Status | 상태 코드 (200? 401?) |
+| Type | fetch |
+| Time | 걸린 시간. 1초 넘으면 의심 |
+
+5. 그 줄을 클릭 → 오른쪽에 탭이 열린다
+
+| 탭 | 보는 것 |
+|---|---|
+| **Headers** | 메서드, 주소, 상태, 쿠키 같은 귀퉁이 메모 |
+| **Payload** | 내가 **보낸** 내용 (의뢰 내용) |
+| **Response** | 서버가 **돌려준** 내용 (답장) |
+| **Timing** | 어디서 시간이 걸렸나 (서버 대기 = Waiting for server response) |
+
+<FlowSim
+  title="'불러오는 중'에서 멈췄을 때 Network로 진단하기"
+  startLabel="진단 시작"
+  nodes={[
+    { id: "list", label: "목록에 있나?", sub: "요청 출발" },
+    { id: "status", label: "Status", sub: "답 왔나" },
+    { id: "time", label: "Time", sub: "얼마나" },
+    { id: "resp", label: "Response", sub: "무슨 답" },
+  ]}
+  steps={[
+    { at: "list", say: "목록에 요청이 아예 없다 → 창구(화면 코드)가 요청을 안 보냈다. 프론트 문제." },
+    { at: "status", say: "Status가 (pending)으로 계속 남아 있다 → 진료실이 아직 답을 못 줬다. 서버·DB 쪽.", tone: "error" },
+    { at: "time", say: "몇십 초 뒤 504 → 시간 초과. 배포 첫날 내가 본 게 이거다. 서버가 DB 답을 기다리다 포기.", tone: "error" },
+    { at: "resp", say: "401이면 Response에 '로그인이 필요해요' → 다시 로그인. 400이면 내가 보낸 Payload를 확인." },
+  ]}
+/>
+
+## 🛠 알아두면 좋은 체크박스
+
+- **Preserve log**: 페이지를 옮겨도 목록이 안 지워진다 (로그인 → 이동 과정 볼 때)
+- **Disable cache**: 저장된 옛 파일 말고 매번 새로 받는다
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="'불러오는 중'에서 멈췄는데 어디가 문젠지 모른다"
+  cause="요청이 출발했는지·답이 왔는지를 확인하지 않고 추측만 해서"
+  fix="Network → Fetch/XHR에서 그 요청의 Status·Time·Response 세 개만 본다"
+/>

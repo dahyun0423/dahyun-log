@@ -1,0 +1,57 @@
+export const meta = {
+  title: "Console — 빨간 글씨 읽고, 직접 물어보기",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 3,
+  category: "frontend",
+  born: "화면이 이상할 때 Console에 빨간 글씨가 잔뜩 있었는데, 무서워서 그냥 닫았다.",
+  summary: "에러 메시지 읽는 순서, 그리고 Console에서 API를 직접 불러 보기",
+  minutes: 10,
+  goals: ["에러 메시지에서 '무엇이·어디서'를 찾는다", "Console에서 fetch로 API를 직접 부른다"],
+  questions: ["빨간 에러에서 먼저 볼 두 가지", "Console에서 /api/auth를 불렀을 때 결과는?", "console.log는 언제 쓰면 좋을까?"],
+};
+
+## 🎬 장면
+
+Console은 **진료 기록에 남는 경고문 + 직접 물어볼 수 있는 상담 창구**다.
+빨간 글씨는 무서운 게 아니라 "여기가 아파요"라는 **증상 메모**다.
+
+## 🗺 빨간 글씨 읽는 순서
+
+```text
+Uncaught TypeError: Cannot read properties of undefined (reading 'title')
+    at HomeDashboard (HomeDashboard.tsx:42:18)
+```
+
+1. **맨 앞 단어** — 에러 종류. `TypeError` = 없는 것(undefined)을 쓰려고 함
+2. **콜론 뒤 문장** — 무엇이. `undefined`에서 `title`을 읽으려 했다
+3. **at …** — 어디서. 파일 이름:줄:칸. **클릭하면 그 줄로 이동**
+4. 노란 글씨(Warning)는 당장 고장은 아니고 "조심하세요"
+
+<Callout type="핵심">에러 메시지를 통째로 복사해서 검색하거나 물어보면 반은 해결된다. "안 돼요" 대신 이 문장을 붙여 넣는다.</Callout>
+
+## 🛠 손으로 — Console에서 API 직접 부르기
+
+**⌥⌘J**로 Console을 열고 한 줄씩 쳐 본다 (Enter로 실행).
+
+```js
+// 1) 지금 로그인 상태인가?
+await fetch("/api/auth").then((r) => r.json())
+
+// 2) 내 노트 목록 — 로그인 안 했으면 몇 번이 나올까?
+const r = await fetch("/api/notes"); r.status
+
+// 3) 화면에 메시지 찍기
+console.log("안녕, 다현")
+```
+
+<Callout type="주의">Console에 붙여 넣으라는 코드를 남이 보내 주면 조심한다. 내 로그인 상태로 실행되기 때문이다. 내가 뜻을 아는 코드만 친다.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="Console에 빨간 글씨가 잔뜩인데 뭘 봐야 할지 모른다"
+  cause="한꺼번에 다 읽으려 하고, 무섭다고 닫아서"
+  fix="맨 위 에러 하나만: 종류 → 무엇이 → at(어디서) 클릭"
+/>
