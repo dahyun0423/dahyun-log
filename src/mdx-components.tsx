@@ -2,11 +2,11 @@ import type { MDXComponents } from "mdx/types";
 import Analogy from "@/components/lesson/Analogy";
 import Callout from "@/components/lesson/Callout";
 import FlowSim from "@/components/lesson/FlowSim";
-import KeySentence from "@/components/lesson/KeySentence";
+import Diagnosis from "@/components/lesson/Diagnosis";
 
 // MDX 본문 요소에 디자인 토큰 스타일 입히기 + 레슨용 부품 등록(import 없이 바로 사용)
 const components: MDXComponents = {
-  h2: (props) => <h2 className="mt-14 mb-3 border-b border-line-subtle pb-3 text-t3 font-bold" {...props} />,
+  h2: (props) => <h2 className="mt-14 mb-3 border-l-4 border-primary pl-3 text-t3 font-bold" {...props} />,
   h3: (props) => <h3 className="mt-8 mb-2 text-t4 font-bold" {...props} />,
   p: (props) => <p className="my-4 text-t5 text-fg-secondary" {...props} />,
   ul: (props) => <ul className="my-4 list-disc space-y-1.5 pl-5 text-t5 text-fg-secondary" {...props} />,
@@ -36,7 +36,7 @@ const components: MDXComponents = {
   Analogy,
   Callout,
   FlowSim,
-  KeySentence,
+  Diagnosis,
 };
 
 export function useMDXComponents(): MDXComponents {

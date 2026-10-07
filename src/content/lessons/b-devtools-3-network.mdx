@@ -1,0 +1,110 @@
+export const meta = {
+  title: "Network — 의뢰서 한 장 한 장 읽기",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 3,
+  category: "server",
+  born: "배포 사이트에서 노트가 '불러오는 중'에서 멈췄을 때, 요청이 갔는지 안 갔는지조차 확인할 줄 몰랐다.",
+  summary: "읽는 순서, 상태 코드 해석, Timing 단계, Cookies 탭, Copy as cURL, 요청 막기, 느린 망 흉내",
+  minutes: 25,
+  goals: ["Fetch/XHR로 API 요청만 거른다", "Headers → Payload → Response → Timing 순서로 읽는다", "Timing에서 '서버가 느린지 용량이 큰지' 가른다"],
+  questions: [
+    "노트 저장 요청의 메서드·상태·걸린 시간은?",
+    "Payload와 Response의 차이",
+    "Timing에서 Waiting(TTFB)이 길면 무엇을 의심하나?",
+    "Copy as cURL을 공유할 때 조심할 점",
+  ],
+};
+
+## 🎬 장면
+
+Network = **창구와 진료실 사이를 오간 의뢰서 전부의 복사본**.
+"요청이 갔나? 답이 왔나? 몇 초 걸렸나? 무엇을 보냈고 무엇을 받았나?" — 전부 여기 있다.
+
+## 🗺 현업에서 읽는 순서
+
+1. 개발자 도구를 **먼저 열어 둔 채** 새로고침 (나중에 열면 목록이 비어 있다)
+2. 필터 **Fetch/XHR** → 이미지·글꼴 빼고 API 요청만
+3. **빨간 줄**과 **Status** 열 훑기
+4. 문제 요청 클릭 → **Headers** (주소·메서드·상태·쿠키)
+5. **Payload** = 내가 **보낸** 것
+6. **Preview / Response** = 서버가 **돌려준** 것 (Preview는 예쁘게, Response는 날것 그대로)
+7. 느리면 **Timing**
+8. 누가 이 요청을 불렀나 → **Initiator**
+
+## 🗺 Status 열 해석
+
+| 보이는 것 | 뜻 | 다음에 볼 곳 |
+|---|---|---|
+| 200·201 | 성공 | 그런데 화면이 이상하면 Preview로 **응답 모양**(키 이름, 배열인지) |
+| **401** | 누군지 모름 | 요청의 **Cookies** 탭 — 팔찌(세션 쿠키)가 실렸나 |
+| **403** | 권한 없음 | 서버 권한 규칙 |
+| **404** | 주소 없음 | 경로 오타, 배포 경로 |
+| **5xx** | 서버 고장 | 서버 로그 (`vercel logs`, Spring/FastAPI 로그) |
+| **504** | 서버가 답을 기다리다 포기 | 서버 ↔ DB 연결 (배포 첫날 내 문제) |
+| **CORS error** | 다른 주소끼리 막힘 | 서버의 `Access-Control-*` 응답 헤더 |
+| **(failed)** | 네트워크에서 실패 | 인터넷, 차단 프로그램 |
+| **(blocked:…)** | 브라우저가 막음 | 마우스를 올리면 이유 |
+| (pending) | 아직 답 없음 | 오래 남아 있으면 서버가 멈춘 것 ⚠️ 공식 문서엔 표기 설명 없음 |
+
+## 🗺 Timing 탭 — 시간이 어디서 샜나
+
+공식 문서의 단계 순서:
+
+| 단계 | 뜻 | 길면 |
+|---|---|---|
+| Queueing | 순서 기다림 | 같은 서버로 동시 연결 6개 제한 등 |
+| Stalled | 출발 전 대기 | |
+| DNS Lookup | 주소 → IP 찾기 | |
+| Initial connection | 연결 맺기 (SSL 포함) | 첫 요청이라 그런 경우 많음 |
+| Request sent | 보내기 | |
+| **Waiting (TTFB)** | **서버가 생각하는 시간** | 서버·DB가 느림, Vercel 콜드스타트 |
+| **Content Download** | 받는 시간 | 응답이 너무 큼 |
+
+⚠️ 최신 Chrome 화면엔 Waiting이 "Waiting for server response"로 보일 수 있다 (공식 레퍼런스 표기는 Waiting (TTFB)).
+
+<Callout type="핵심">Waiting이 길면 **서버 쪽**, Content Download가 길면 **응답 크기**. 이 두 줄만 봐도 누구 일인지 갈린다.</Callout>
+
+## 🛠 꼭 알아야 할 기능
+
+| 기능 | 어디 | 언제 |
+|---|---|---|
+| **Preserve log** | 위쪽 체크 | 로그인 → 이동처럼 페이지가 바뀌어도 기록 유지 |
+| **Disable cache** | 위쪽 체크 | 고쳤는데 옛날 게 보일 때 (개발자 도구가 열려 있을 때만 적용) |
+| 느린 망 | **No throttling** 드롭다운 | **Slow 4G**, **3G**, **Offline** 흉내 |
+| Cookies 탭 | 요청 클릭 후 | 실린 쿠키 · **show filtered out request cookies** = 안 실린 쿠키와 이유 |
+| **Copy as cURL** | 요청 우클릭 → Copy | 같은 요청을 터미널에서 재현, 버그 제보 |
+| **Copy as fetch** | 〃 | Console에서 재현 |
+| **Block request URL** | 요청 우클릭 | 그 API가 죽으면 화면이 어떻게 되는지 |
+| **Override content** | 요청 우클릭 | 서버 응답을 내 마음대로 바꿔 보기 (Sources 카드) |
+| Waterfall + Shift | 목록 오른쪽 막대 | 누가 누구를 불렀는지(초록=부른 쪽, 빨강=불린 쪽) |
+| **Export HAR (sanitized)** | 위쪽 ⬇ | 기록 전체를 파일로 공유 |
+
+<Callout type="주의">**Copy as cURL**과 **HAR (with sensitive data)** 에는 **로그인 쿠키가 들어간다**. 그대로 남에게 주면 내 계정으로 접속할 수 있다. 공유할 땐 sanitized로, cURL은 Cookie 줄을 지우고.</Callout>
+
+## ⚠️ 초보가 자주 하는 실수
+
+- 페이지가 다 뜬 다음 개발자 도구를 열어서 "요청이 없다"
+- Preserve log 없이 로그인 흐름을 보다가 기록을 잃음
+- 캐시 때문에 고친 게 안 보이는데 코드를 의심함 → Disable cache
+- CORS를 프론트에서 `mode: 'no-cors'`로 피하려 함 → 응답을 못 읽게 될 뿐. **서버 헤더**를 고친다
+
+## 🛠 손으로 (로그인한 상태에서)
+
+1. **Fetch/XHR** → 오른쪽 노트에 한 줄 쓰고 **Enter** → 이 카드 id(`b-devtools-3-network`)의 **PUT** 요청 클릭 → Headers의 Status, Payload, Response, **Cookies 탭**의 `dahyun_session` 확인
+2. **Slow 4G** + **Disable cache** → 새로고침 → `/api/notes`의 Timing에서 Waiting과 Content Download 중 어느 쪽이 큰지
+3. `/api/notes` 우클릭 → **Block request URL** → 새로고침 → 사이드바·홈이 어떻게 보이나 (확인 후 하단 **Network request blocking**에서 해제)
+4. 요청 우클릭 → **Copy as fetch** → Console에 붙여 넣어 실행 → 같은 결과가 오는지
+
+## 📚 출처
+
+- [Network features reference](https://developer.chrome.com/docs/devtools/network/reference) · [DebugBear — Waiting for server response](https://debugbear.com/docs/waiting-for-server-response)
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="'불러오는 중'에서 멈췄는데 어디가 문젠지 모른다"
+  cause="요청이 출발했는지, 답이 왔는지, 시간이 어디서 샜는지 확인하지 않고 추측해서"
+  fix="Fetch/XHR → Status → (pending/504면) Timing의 Waiting → 서버 로그. 401이면 Cookies 탭"
+/>

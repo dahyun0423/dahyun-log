@@ -1,30 +1,30 @@
 export const meta = {
   title: "레슨 제목 (질문형 추천)",
+  // track: "basics", topic: "devtools" | "dev" | "collab",  ← 기초 카드면 추가
   week: 1,
   order: 1,
   category: "server", // server | infra | ai | frontend | devlog
+  born: "이 레슨이 생긴 이유 — 내가 실제로 막힌 장면 한두 문장",
   summary: "한 줄 요약",
   minutes: 20,
-  goals: ["이 레슨을 마치면 할 수 있는 것 1", "2"],
+  goals: ["끝나면 할 수 있는 것 1", "2"],
   questions: ["노트에 미리 깔릴 질문 1", "질문 2"],
 };
 
-## 이런 상황, 겪어본 적 있죠
+## 🎬 장면
 
-## 비유로 먼저
+## 🗺 그림으로
 
-<Analogy pairs={[{ from: "아는 것", to: "새 개념", desc: "설명" }]} />
-
-## 실제로는
+<Analogy pairs={[{ from: "병원에서", to: "웹에서", desc: "설명" }]} />
 
 <FlowSim
-  title="흐름 시뮬레이터"
+  title="흐름"
   nodes={[{ id: "a", label: "A" }, { id: "b", label: "B" }]}
   steps={[{ at: "a", say: "설명" }, { at: "b", say: "설명", packet: "데이터" }]}
 />
 
-<Callout type="핵심">한 줄 핵심</Callout>
+## 🛠 손으로
 
-## 직접 해보기
+## ✍️ 내 말로
 
-<KeySentence note="왜 중요한지">핵심 문장</KeySentence>
+<Diagnosis symptom="증상" cause="원인" fix="처방" />
