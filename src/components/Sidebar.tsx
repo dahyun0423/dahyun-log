@@ -62,6 +62,9 @@ export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
           <Link href="/" onClick={() => setOpen(false)} className={item(pathname === "/")}>
             🏠 홈
           </Link>
+          <Link href="/review" onClick={() => setOpen(false)} className={item(pathname === "/review")}>
+            🔁 오늘의 복습
+          </Link>
           {status === "me" && (
             <button onClick={createPage} disabled={creating} className={`${item(false)} w-full`}>
               ＋ 새 페이지

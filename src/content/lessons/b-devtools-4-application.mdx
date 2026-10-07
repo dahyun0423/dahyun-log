@@ -15,6 +15,11 @@ export const meta = {
     "'배포했는데 옛날 화면'일 때 서비스 워커에서 볼 것",
     "Clear site data와 쿠키만 지우기의 차이",
   ],
+  quiz: [
+    { q: "HttpOnly 쿠키의 특징은?", choices: ["HTTP에서만 동작", "자바스크립트(document.cookie)로 읽을 수 없다", "만료가 없다", "서버로 안 보내진다"], answer: 1, why: "그래서 XSS로 훔쳐 가기 어렵다." },
+    { q: "'배포했는데 옛날 화면이 나온다'(PWA)일 때 개발 중 켤 것은?", choices: ["Offline", "Update on reload", "Push", "Bypass for network만"], answer: 1, why: "새로고침마다 새 서비스 워커를 적용." },
+    { q: "쿠키·저장소·캐시·서비스 워커를 한 번에 지우는 곳은?", choices: ["Cookies → Clear all", "Storage → Clear site data", "Console.clear()", "Network → 기록 지우기"], answer: 1, why: "완전한 초기 상태 확인용." },
+  ],
 };
 
 ## 🎬 장면

@@ -10,6 +10,11 @@ export const meta = {
   minutes: 15,
   goals: ["세 가지 merge 방식의 차이를 그림으로 말한다", "쌍둥이 커밋이 왜 충돌을 만드는지 안다", "내 레포에서 어떤 방식을 쓰는지 안다"],
   questions: ["Squash와 Rebase는 원래 커밋을 어떻게 다루나?", "쌍둥이 커밋이 생긴 이유를 한 문장으로", "feature→develop, develop→main에 각각 무엇을 쓰기로 했나?"],
+  quiz: [
+    { q: "원래 커밋을 그대로 연결해 남기는 merge 방식은?", choices: ["Squash and merge", "Rebase and merge", "Create a merge commit", "Cherry-pick"], answer: 2, why: "그래서 쌍둥이 커밋이 안 생긴다." },
+    { q: "쌍둥이 커밋이 생기는 이유는?", choices: ["푸시를 두 번 해서", "Squash·Rebase가 커밋을 복사해 새 이름으로 붙여서", "브랜치 이름이 같아서", "GitHub 장애"], answer: 1, why: "내용은 같아도 git은 다른 커밋으로 본다." },
+    { q: "이 레포에서 develop → main에 쓰기로 한 방식은?", choices: ["Squash", "Rebase", "Create a merge commit", "직접 push"], answer: 2, why: "feature → develop은 Squash." },
+  ],
 };
 
 ## 🎬 장면
