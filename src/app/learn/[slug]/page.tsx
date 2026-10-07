@@ -73,6 +73,7 @@ async function Learn({ params }: { params: PageProps<"/learn/[slug]">["params"] 
       }
       note={
         <LazyNoteEditor
+          key={slug}
           id={slug}
           lesson={slug}
           defaultTitle={lesson.title}

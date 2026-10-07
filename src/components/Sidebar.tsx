@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Lesson } from "@/lib/lessons";
 import { notifyNotesChanged, useMyNotes } from "@/lib/useMyNotes";
+import PageTree from "@/components/sidebar/PageTree";
 import { roadmap } from "@/data/roadmap";
 
 export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
@@ -12,7 +13,7 @@ export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false); // 모바일 메뉴
   const [creating, setCreating] = useState(false);
-  const { status, notes } = useMyNotes();
+  const { status, notes, folders } = useMyNotes();
 
   const notedLessons = new Set(notes.filter((n) => n.lesson).map((n) => n.lesson));
   const pages = notes.filter((n) => !n.lesson);
@@ -99,21 +100,14 @@ export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
             );
           })}
 
-          <p className="mt-6 mb-1 px-2 text-t7 font-semibold text-fg-tertiary">내 페이지</p>
-          {status === "guest" && <p className="px-2 py-1 text-t7 text-fg-disabled">로그인하면 보여요</p>}
-          {status === "me" && pages.length === 0 && (
-            <p className="px-2 py-1 text-t7 text-fg-disabled">＋ 새 페이지로 시작</p>
-          )}
-          {pages.map((p) => (
-            <Link
-              key={p.id}
-              href={`/pages/${p.id}`}
-              onClick={() => setOpen(false)}
-              className={item(pathname === `/pages/${p.id}`)}
-            >
-              📄 <span className="truncate">{p.title}</span>
-            </Link>
-          ))}
+          {status === "me" ? (
+            <PageTree folders={folders} pages={pages} onNavigate={() => setOpen(false)} />
+          ) : status === "guest" ? (
+            <>
+              <p className="mt-6 mb-1 px-2 text-t7 font-semibold text-fg-tertiary">내 페이지</p>
+              <p className="px-2 py-1 text-t7 text-fg-disabled">로그인하면 보여요</p>
+            </>
+          ) : null}
 
           <div className="mt-8 border-t border-line-subtle pt-3">
             {status === "me" ? (
