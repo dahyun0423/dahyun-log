@@ -4,12 +4,15 @@ import Link from "next/link";
 import Tag from "@/components/Tag";
 import { categories } from "@/data/categories";
 import { roadmap } from "@/data/roadmap";
+import { basicsTopics, isBasics } from "@/data/basics";
 import type { Lesson } from "@/lib/lessons";
 import { useMyNotes } from "@/lib/useMyNotes";
 
 // 홈 화면 — 내 노트 진행 상황은 로그인해야 보여서 브라우저에서 불러온다
-export default function HomeDashboard({ lessons }: { lessons: Lesson[] }) {
+export default function HomeDashboard({ lessons: all }: { lessons: Lesson[] }) {
   const { status, notes } = useMyNotes();
+  const lessons = all.filter((l) => !isBasics(l));
+  const cards = all.filter(isBasics);
 
   const noted = new Set(notes.filter((n) => n.lesson).map((n) => n.lesson));
   // 이어서 할 레슨 = 아직 노트를 안 쓴 첫 레슨
@@ -17,17 +20,21 @@ export default function HomeDashboard({ lessons }: { lessons: Lesson[] }) {
   const week = next?.week ?? lessons.at(-1)?.week ?? 1;
   const thisWeek = roadmap.find((w) => w.week === week);
   const recent = notes.slice(0, 5);
+  // 오늘의 기초 카드 = 아직 노트를 안 쓴 첫 카드
+  const card = cards.find((c) => !noted.has(c.slug));
+  const cardTopic = basicsTopics.find((t) => t.slug === card?.topic);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12 md:px-10">
       <Tag>{week}주차</Tag>
       <h1 className="mt-3 text-t1 font-bold tracking-[-0.02em]">{thisWeek?.theme}</h1>
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "레슨", value: `${lessons.length}개` },
-          { label: "노트 쓴 레슨", value: `${noted.size}개` },
-          { label: "내 페이지", value: `${notes.length - noted.size}개` },
+          { label: "기초 카드", value: `${cards.filter((c) => noted.has(c.slug)).length}/${cards.length}` },
+          { label: "노트 쓴 레슨", value: `${lessons.filter((l) => noted.has(l.slug)).length}개` },
+          { label: "내 페이지", value: `${notes.filter((n) => !n.lesson).length}개` },
         ].map((s) => (
           <div key={s.label} className="rounded-lg bg-surface-subtle p-4">
             <p className="text-t7 text-fg-tertiary">{s.label}</p>
@@ -44,6 +51,20 @@ export default function HomeDashboard({ lessons }: { lessons: Lesson[] }) {
           <p className="text-t7 font-semibold opacity-80">이어서 하기</p>
           <p className="mt-1 text-t3 font-bold">{next.title}</p>
           <p className="mt-1 text-t6 opacity-90">{next.summary}</p>
+        </Link>
+      )}
+
+      {card && (
+        <Link
+          href={`/learn/${card.slug}`}
+          className="mt-3 flex items-center gap-4 rounded-xl border border-line p-5 transition-transform duration-100 hover:bg-surface-subtle active:scale-[0.98]"
+        >
+          <span className="text-t2">{cardTopic?.icon}</span>
+          <span className="flex-1">
+            <span className="block text-t7 font-semibold text-success">오늘의 기초 카드 · {card.minutes}분</span>
+            <span className="mt-0.5 block text-t5 font-bold">{card.title}</span>
+          </span>
+          <span className="text-fg-tertiary">→</span>
         </Link>
       )}
 

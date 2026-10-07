@@ -67,7 +67,7 @@ export default function NoteEditor(props: Props) {
       .catch(() => setLoaded({ title: props.defaultTitle, blocks: [] }));
   }, [props.id, props.defaultTitle, questionsKey]);
 
-  if (!loaded) return <p className="px-6 py-4 text-t6 text-fg-tertiary">노트 불러오는 중…</p>;
+  if (!loaded) return <p className="px-6 py-5 text-t6 text-fg-tertiary md:px-12">노트 불러오는 중…</p>;
   if (loaded === "guest") return <LoginPrompt />;
   // key: 노트가 바뀌면 에디터를 새로 만든다 (이전 노트 내용이 다른 노트에 저장되는 사고 방지)
   return <Editor key={props.id} {...props} initialTitle={loaded.title} initialBlocks={loaded.blocks} />;

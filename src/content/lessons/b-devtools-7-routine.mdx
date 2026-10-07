@@ -1,0 +1,111 @@
+export const meta = {
+  title: "현업 디버깅 루틴 — 증상별 진료 순서",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 7,
+  category: "frontend",
+  born: "패널 하나하나는 알겠는데, 막상 문제가 생기면 어느 탭부터 열어야 할지 몰라서 이것저것 눌러 봤다.",
+  summary: "버튼이 안 눌림 · 데이터가 안 뜸 · 모바일이 깨짐 · 느림 · 자꾸 로그아웃 — 다섯 장의 진료 순서표, React DevTools, 명령 메뉴",
+  minutes: 20,
+  goals: ["증상을 듣고 첫 번째로 열 탭을 고른다", "다섯 가지 진료 순서를 따라 한다", "React DevTools로 props·state를 본다"],
+  questions: [
+    "'데이터가 안 떠요'일 때 첫 세 단계",
+    "'버튼이 안 눌려요'에서 Console 다음에 볼 곳",
+    "'자꾸 로그아웃돼요'에서 쿠키의 어떤 열을 보나",
+    "이번 주에 실제로 써먹은 루틴이 있다면",
+  ],
+};
+
+## 🎬 장면
+
+응급실은 증상마다 **트리아지(진료 순서표)** 가 있다. 가슴 통증이면 심전도부터, 열이면 체온부터.
+디버깅도 똑같다. 증상을 들으면 **열 탭이 정해져 있다.**
+
+## 🗺 A. "버튼이 안 눌려요"
+
+1. **Console** — 누르는 순간 빨간 에러가 뜨나
+2. **Elements** — 버튼 위를 다른 투명한 요소가 덮고 있나(z-index), `disabled`인가
+3. **Console** `getEventListeners($0)` — 클릭 이벤트가 붙어 있나 (React는 비어 보일 수 있음)
+4. **Sources** → **Event Listener Breakpoints → click** — 핸들러가 실행되나
+5. **Network** — 요청이 나갔나, 상태는
+6. **React DevTools** — 눌렀을 때 state가 바뀌나
+
+## 🗺 B. "데이터가 안 떠요"
+
+1. **Network → Fetch/XHR** — 그 요청이 **있나**
+   - 없다 → 요청 코드가 안 돌았다 → **Sources XHR/fetch breakpoint**
+2. **Status**
+   - 401·403 → 요청의 **Cookies** 탭 + Application → Cookies
+   - 404 → 주소
+   - 5xx·504 → **서버 로그** (`vercel logs`)
+   - CORS error → 서버 CORS 설정
+3. 200인데 안 뜬다 → **Preview**로 응답 **모양** (키 이름? 배열?)
+4. **Console** — 그리다가 난 에러
+5. **React DevTools** — state에 데이터가 들어갔나
+
+## 🗺 C. "모바일에서 깨져요"
+
+1. **⌘⇧M** → Responsive → **Show media queries**로 경계 확인
+2. 폭을 줄이며 넘치는 요소 → **scroll 배지**, 박스 모델
+3. **grid/flex 배지**로 정렬선 겹쳐 보기
+4. Styles에서 미디어 쿼리 규칙이 적용됐나(취소선?)
+5. 마지막은 **실제 폰**
+
+## 🗺 D. "느려요"
+
+1. **Performance** 첫 화면 — LCP·INP·CLS 중 무엇이
+2. **Network Timing** — Waiting(TTFB) 길면 서버·콜드스타트, Content Download 길면 응답 크기
+3. CPU 느리게 → **Record and reload** → Insights → 긴 작업 → Bottom-up
+4. 다시 그리기가 많아 보이면 **React Profiler**
+5. 화면이 밀리면 **Rendering → Layout Shift Regions**
+6. **Lighthouse**(시크릿)로 마무리 점검
+
+## 🗺 E. "자꾸 로그아웃돼요"
+
+1. **Network** **Preserve log** 켜고 로그인 과정 재현
+2. 로그인 응답 **Headers**의 `Set-Cookie` 있나 → 요청 **Cookies** 탭의 **show filtered out request cookies**로 막힌 이유
+3. **Application → Cookies**
+   - **Expires / Max-Age**: "Session"이거나 너무 짧나
+   - **Domain / Path**: 다른 주소에서 빠지나
+   - **Secure**: http(로컬)에서 Secure 쿠키는 안 실림
+   - **SameSite**: 다른 사이트를 거쳐 왔나
+   - **Only show cookies with an issue**
+4. 다음 API 요청 Cookies 탭에 팔찌가 **실제로 실렸나** → 그런데도 401이면 서버 서명·만료 확인
+5. (당당처럼 화면과 API 주소가 다르면) fetch의 `credentials: "include"`, 서버의 `Access-Control-Allow-Credentials`, `SameSite=None; Secure` 조합
+
+## 🗺 React Developer Tools (확장 프로그램)
+
+- 크롬 웹스토어에서 **React Developer Tools** 설치 → 개발자 도구에 **Components**, **Profiler** 탭이 생김
+- **Components**: 컴포넌트 나무 · 고르면 오른쪽에 **props·state**. 값을 직접 바꿔 화면 반응 보기
+- **Profiler**: 녹화 → 어떤 컴포넌트가 몇 번, 얼마나 오래 다시 그려졌나
+- 승민님 React PR 리뷰 때: "이 버튼을 누르면 어떤 state가 바뀌나"를 여기서 확인
+- ⚠️ Next.js 서버 컴포넌트가 이 나무에 어떻게 보이는지는 직접 확인해 보기
+
+## 🗺 명령 메뉴 ⌘⇧P — 모든 기능의 검색창
+
+| 입력 | 하는 일 |
+|---|---|
+| `screenshot` | **Capture full size screenshot** (스크롤 전체 캡처) |
+| `Disable JavaScript` | JS 없이 화면이 어떻게 보이나 |
+| `Show Rendering` | 다크모드·움직임 줄이기 흉내 |
+| `>` / `!` / `:` | 명령 / 스니펫 실행 / 줄 번호로 이동 |
+
+## 🛠 손으로 — 일부러 고장 내고 고치기
+
+1. **B 연습**: Network에서 `/api/notes`를 **Block request URL** → 새로고침 → B 순서대로 진단 → 해제
+2. **E 연습**: Application → Cookies에서 `dahyun_session`의 Value를 한 글자 바꿈 → 노트 열기 → 401 → E 순서대로 원인 찾기 → 다시 로그인
+3. **C 연습**: ⌘⇧M 320px에서 사이드바를 열고 넘치는 요소가 있는지
+4. 실제로 막혔던 일이 생기면 그날 **＋ 새 페이지**에 "어떤 루틴으로 찾았나"를 남기기
+
+## 📚 출처
+
+- [Chrome DevTools 문서](https://developer.chrome.com/docs/devtools) · [Command Menu](https://developer.chrome.com/docs/devtools/command-menu) · [React Developer Tools](https://react.dev/learn/react-developer-tools) · 진료 순서는 위 공식 문서의 기능들을 현업 관행대로 엮은 것
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="문제가 생기면 어느 탭부터 열지 몰라 이것저것 누른다"
+  cause="증상과 도구를 짝지어 둔 순서표가 없어서"
+  fix="증상 → 첫 탭 고정: 안 눌림=Console, 안 뜸=Network, 깨짐=⌘⇧M, 느림=Performance, 로그아웃=Cookies"
+/>

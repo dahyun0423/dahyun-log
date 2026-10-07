@@ -220,18 +220,6 @@ body {
   }
 }
 
-/* 섹션 제목 앞에 01, 02 … 번호 자동으로 붙이기 */
-.lesson {
-  counter-reset: section;
-}
-.lesson h2::before {
-  counter-increment: section;
-  content: counter(section, decimal-leading-zero);
-  margin-right: 10px;
-  font-size: 15px;
-  color: var(--primary);
-}
-
 /* 스크롤해서 화면에 들어올 때 살짝 떠오르기 (CSS만으로, 지원 안 되면 그냥 보임) */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {

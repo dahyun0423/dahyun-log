@@ -1,0 +1,54 @@
+export const meta = {
+  title: "브랜치와 PR — base는 받는 쪽",
+  track: "basics",
+  topic: "collab",
+  week: 0,
+  order: 2,
+  category: "devlog",
+  born: "PR을 올리는데 'Can't automatically merge'가 떴다. 알고 보니 받는 쪽(base)이 develop이 아니라 main으로 잡혀 있었다.",
+  summary: "main·develop·feature 역할, PR의 base와 compare, 주소로 PR 열기",
+  minutes: 10,
+  goals: ["브랜치 세 종류의 역할을 말한다", "PR 화면에서 base·compare를 먼저 확인한다", "배너가 없을 때 주소로 PR을 연다"],
+  questions: ["main·develop·feature/* 각각 무엇을 위한 곳인가", "base와 compare 중 '받는 쪽'은?", "Compare & pull request 배너가 안 뜰 때 PR 여는 주소"],
+};
+
+## 🎬 장면
+
+브랜치 = **진료 기록의 가지**. 본 차트(main)를 바로 고치지 않고 사본(feature)에서 작업한 뒤, 검토(PR)를 거쳐 합친다.
+
+## 🗺 브랜치 세 종류 (내 규칙)
+
+| 브랜치 | 역할 | 직접 작업? |
+|---|---|---|
+| `main` | 실제 배포되는 본 차트 | ✗ |
+| `develop` | 기능들이 모이는 통합 차트 | ✗ |
+| `feature/*` `fix/*` | 오늘 하는 일 하나 | ✓ |
+
+흐름: `feature/…` →(PR, Squash)→ `develop` →(PR)→ `main` → Vercel 자동 배포
+
+## 🗺 PR 화면에서 제일 먼저 볼 것
+
+```text
+base: develop  ←  compare: feature/notes-folders
+ 받는 쪽            보내는 쪽
+```
+
+- GitHub는 base를 **기본 브랜치(main)**로 자동 선택한다 → 매번 확인
+- 초록 **Able to merge**면 충돌 없음, 빨간 **Can't automatically merge**면 멈추고 base부터 본다
+
+## 🛠 배너가 없을 때
+
+"Compare & pull request" 노란 배너는 **방금 push한 브랜치**에만 뜬다. 없으면 주소로:
+
+```text
+github.com/dahyun0423/dahyun-log/compare/받는쪽...보내는쪽
+예) .../compare/develop...feature/notes-folders
+```
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="PR에 Can't automatically merge가 뜬다"
+  cause="base(받는 쪽)가 main으로 잘못 잡혀 이력이 다른 브랜치끼리 비교됐다"
+  fix="PR 화면 맨 위 base·compare부터 확인. 작업 브랜치는 develop으로"
+/>
