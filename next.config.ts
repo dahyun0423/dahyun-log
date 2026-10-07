@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
+import createMDX from "@next/mdx";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  // .mdx 파일도 페이지/모듈로 인식
+  pageExtensions: ["ts", "tsx", "md", "mdx"],
   turbopack: {
     rules: {
       "*.css": {
@@ -14,4 +16,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withMDX = createMDX({});
+
+export default withMDX(nextConfig);
