@@ -1,12 +1,15 @@
-import { isValidId, readNote, writeNote, READ_ONLY, type Note } from "@/lib/notes";
+import { isLoggedIn, unauthorized } from "@/lib/auth";
+import { isValidId, readNote, writeNote, type Note } from "@/lib/notes";
 
 /*
  * 노트 API — Spring으로 치면
  *   @GetMapping("/api/notes/{id}")  → GET
  *   @PutMapping("/api/notes/{id}")  → PUT
+ * 둘 다 로그인한 사람(나)만 가능
  */
 
-export async function GET(_req: Request, ctx: RouteContext<"/api/notes/[id]">) {
+export async function GET(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
+  if (!isLoggedIn(req)) return unauthorized();
   const { id } = await ctx.params;
   if (!isValidId(id)) return Response.json({ message: "잘못된 id" }, { status: 400 });
 
@@ -18,8 +21,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/notes/[id]">) {
 type PutBody = Pick<Note, "title" | "lesson" | "blocks"> & { markdown: string };
 
 export async function PUT(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
-  if (READ_ONLY) return Response.json({ message: "배포 사이트는 읽기 전용" }, { status: 403 });
-
+  if (!isLoggedIn(req)) return unauthorized();
   const { id } = await ctx.params;
   if (!isValidId(id)) return Response.json({ message: "잘못된 id" }, { status: 400 });
 
@@ -28,13 +30,9 @@ export async function PUT(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
     return Response.json({ message: "blocks, title이 필요해요" }, { status: 400 });
   }
 
-  const note: Note = {
-    id,
-    title: body.title.trim() || "제목 없음",
-    lesson: body.lesson ?? null,
-    blocks: body.blocks,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeNote(note, body.markdown ?? "");
-  return Response.json({ updatedAt: note.updatedAt });
+  const updatedAt = await writeNote(
+    { id, title: body.title.trim() || "제목 없음", lesson: body.lesson ?? null, blocks: body.blocks },
+    body.markdown ?? "",
+  );
+  return Response.json({ updatedAt });
 }
