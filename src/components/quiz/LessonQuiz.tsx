@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Question } from "@/data/quiz";
-import QuizCard from "@/components/quiz/QuizCard";
+import QuizRunner from "@/components/quiz/QuizRunner";
 
 // 레슨 끝 확인 퀴즈 — 푼 문제는 복습 일정에 들어간다
 export default function LessonQuiz({ questions }: { questions: Question[] }) {
@@ -11,15 +11,11 @@ export default function LessonQuiz({ questions }: { questions: Question[] }) {
       <p className="mb-4 text-t7 text-fg-tertiary">
         푼 문제는{" "}
         <Link href="/review" className="font-semibold text-primary">
-          🔁 복습
+          🔁 오늘의 복습
         </Link>
         에 들어가요. 맞히면 1일 → 3일 → 7일 → 14일 → 30일 뒤에, 틀리면 금방 다시 나와요.
       </p>
-      <div className="space-y-3">
-        {questions.map((q) => (
-          <QuizCard key={q.id} question={q} />
-        ))}
-      </div>
+      <QuizRunner title={`${questions.length}문제로 확인`} tag="✅ 확인" questions={questions} />
     </section>
   );
 }

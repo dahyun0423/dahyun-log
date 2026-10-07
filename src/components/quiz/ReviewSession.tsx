@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { NEW_PER_DAY, type Progress, type Question } from "@/data/quiz";
-import QuizCard from "@/components/quiz/QuizCard";
+import QuizRunner from "@/components/quiz/QuizRunner";
 
 type Status = "loading" | "guest" | "ready";
 
@@ -27,10 +27,6 @@ export default function ReviewSession({ bank }: { bank: Question[] }) {
   const [progress, setProgress] = useState<Progress[]>([]);
   const [studied, setStudied] = useState<Set<string>>(new Set());
   const [queue, setQueue] = useState<Question[] | null>(null);
-  const [index, setIndex] = useState(0);
-  const [score, setScore] = useState({ right: 0, wrong: 0 });
-  const [retried, setRetried] = useState<Set<string>>(new Set());
-  const [answered, setAnswered] = useState(false);
   const [today, setToday] = useState("");
   const [now, setNow] = useState(0);
 
@@ -104,58 +100,20 @@ export default function ReviewSession({ bank }: { bank: Question[] }) {
     );
   }
 
-  // 끝
-  if (index >= queue.length)
-    return (
-      <div className="mt-8 rounded-xl bg-surface-subtle p-6 text-center">
-        <p className="text-t2">🎉</p>
-        <p className="mt-2 text-t4 font-bold">오늘 복습 끝</p>
-        <p className="mt-1 text-t6 text-fg-secondary">
-          맞힘 {score.right} · 틀림 {score.wrong}
-        </p>
-        <p className="mt-3 text-t7 text-fg-tertiary">맞힌 문제는 다음 상자로, 틀린 문제는 곧 다시 나와요.</p>
-      </div>
-    );
-
-  const q = queue[index];
+  // 풀기 — 상현님 퀴즈 스타일 카드, 틀린 문제는 끝에 한 번 더
   return (
     <div className="mt-8">
-      <div className="mb-3 flex items-center justify-between text-t7 text-fg-tertiary">
-        <span>
-          {index + 1} / {queue.length}
-        </span>
-        <span>
-          ✓ {score.right} · ✗ {score.wrong}
-        </span>
-      </div>
-      <div className="mb-4 h-1 overflow-hidden rounded-full bg-surface-subtle">
-        <div className="h-full bg-success transition-[width] duration-300" style={{ width: `${(index / queue.length) * 100}%` }} />
-      </div>
-      <QuizCard
-        key={`${q.id}-${index}`}
-        question={q}
+      <QuizRunner
+        title="오늘의 복습"
+        tag="🔁 복습"
+        questions={queue}
         salt={today}
         showSource
-        onAnswered={(ok) => {
-          setAnswered(true);
-          setScore((s) => (ok ? { ...s, right: s.right + 1 } : { ...s, wrong: s.wrong + 1 }));
-          // 틀린 문제는 이번 판 끝에 한 번 더 (한 번만)
-          if (!ok && !retried.has(q.id)) {
-            setRetried(new Set(retried).add(q.id));
-            setQueue([...queue, q]);
-          }
-        }}
+        retryWrong
+        endMessage={
+          <p className="mt-4 text-t7 text-fg-tertiary">맞힌 문제는 다음 상자로, 틀린 문제는 10분 뒤부터 다시 나와요. 내일 또 만나요.</p>
+        }
       />
-      <button
-        disabled={!answered}
-        onClick={() => {
-          setAnswered(false);
-          setIndex(index + 1);
-        }}
-        className="mt-4 h-12 w-full rounded-md bg-primary text-t6 font-bold text-fg-on-primary disabled:bg-surface-subtle disabled:text-fg-disabled"
-      >
-        다음 →
-      </button>
     </div>
   );
 }
