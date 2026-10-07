@@ -16,6 +16,10 @@ export const meta = {
     "/learn/w1-03-this-site 주소를 열면 어떤 파일이 실행되나?",
     "bg-primary 클래스는 어디서 색을 가져오나?",
   ],
+  quiz: [
+    { q: "src/app/learn/[slug]/page.tsx는 어떤 주소에 대응할까?", choices: ["/learn", "/learn/아무거나", "/slug", "/page"], answer: 1, why: "[slug] = 바뀌는 자리. Spring의 @PathVariable." },
+    { q: "이 사이트에서 bg-primary 색은 어디서 정해질까?", choices: ["각 컴포넌트 파일", "globals.css의 CSS 변수(--primary)", "package.json", "Vercel 설정"], answer: 1, why: "원색 → 용도 변수 → Tailwind 연결, 세 층." },
+  ],
 };
 
 ## 🎬 낯선 단어 다섯 개
