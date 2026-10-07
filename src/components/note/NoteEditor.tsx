@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { PartialBlock } from "@blocknote/core";
 import { ko } from "@blocknote/core/locales";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView, type Theme } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
+import { notifyNotesChanged } from "@/lib/useMyNotes";
 
 type Props = {
   id: string; // 노트 id (레슨 노트면 레슨 slug)
@@ -14,10 +16,9 @@ type Props = {
   defaultTitle: string;
   titleEditable: boolean; // 자유 페이지만 제목 수정 가능
   questions?: string[]; // 처음 열 때 깔아줄 질문
-  readOnly: boolean;
 };
 
-type Status = "idle" | "saving" | "saved" | "error";
+type Status = "idle" | "saving" | "saved" | "error" | "logged-out";
 
 // 에디터 색·폰트를 사이트 디자인 토큰에 맞춤 (CSS 변수라 다크모드도 자동)
 const theme: Theme = {
@@ -45,7 +46,7 @@ function questionBlocks(questions: string[]): PartialBlock[] {
 }
 
 export default function NoteEditor(props: Props) {
-  const [loaded, setLoaded] = useState<{ title: string; blocks: PartialBlock[] } | null>(null);
+  const [loaded, setLoaded] = useState<{ title: string; blocks: PartialBlock[] } | "guest" | null>(null);
 
   // 배열은 렌더마다 새로 만들어질 수 있어서 문자열로 비교
   const questionsKey = JSON.stringify(props.questions ?? []);
@@ -54,7 +55,9 @@ export default function NoteEditor(props: Props) {
   useEffect(() => {
     fetch(`/api/notes/${props.id}`)
       .then(async (res) => {
-        if (res.ok) {
+        if (res.status === 401) {
+          setLoaded("guest"); // 로그인 안 함
+        } else if (res.ok) {
           const note = await res.json();
           setLoaded({ title: note.title, blocks: note.blocks });
         } else {
@@ -65,6 +68,7 @@ export default function NoteEditor(props: Props) {
   }, [props.id, props.defaultTitle, questionsKey]);
 
   if (!loaded) return <p className="px-6 py-4 text-t6 text-fg-tertiary">노트 불러오는 중…</p>;
+  if (loaded === "guest") return <LoginPrompt />;
   return <Editor {...props} initialTitle={loaded.title} initialBlocks={loaded.blocks} />;
 }
 
@@ -72,11 +76,9 @@ function Editor({
   id,
   lesson,
   titleEditable,
-  readOnly,
   initialTitle,
   initialBlocks,
 }: Props & { initialTitle: string; initialBlocks: PartialBlock[] }) {
-  const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [status, setStatus] = useState<Status>("idle");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -88,7 +90,6 @@ function Editor({
 
   // 2) 입력이 멈추고 0.8초 뒤 자동 저장 (debounce)
   function scheduleSave(nextTitle = title) {
-    if (readOnly) return;
     clearTimeout(timer.current);
     setStatus("saving");
     timer.current = setTimeout(async () => {
@@ -103,9 +104,10 @@ function Editor({
             markdown: editor.blocksToMarkdownLossy(editor.document),
           }),
         });
+        if (res.status === 401) return setStatus("logged-out");
         if (!res.ok) throw new Error(await res.text());
         setStatus("saved");
-        if (nextTitle !== initialTitle) router.refresh(); // 사이드바 제목 갱신
+        if (nextTitle !== initialTitle) notifyNotesChanged(); // 사이드바 제목 갱신
       } catch {
         setStatus("error");
       }
@@ -118,7 +120,7 @@ function Editor({
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-6 pt-5 pb-2 md:px-12">
         <span className="text-t7 font-semibold text-fg-tertiary">내 노트</span>
-        <SaveStatus status={readOnly ? "readonly" : status} />
+        <SaveStatus status={status} />
       </div>
       {titleEditable && (
         <input
@@ -128,13 +130,11 @@ function Editor({
             scheduleSave(e.target.value);
           }}
           placeholder="제목 없음"
-          readOnly={readOnly}
           className="mx-6 mt-4 mb-2 bg-transparent text-t1 font-bold tracking-[-0.02em] outline-none placeholder:text-fg-disabled md:mx-12"
         />
       )}
       <BlockNoteView
         editor={editor}
-        editable={!readOnly}
         theme={{ light: theme, dark: theme }}
         onChange={() => scheduleSave()}
         className="flex-1 pb-24"
@@ -143,14 +143,31 @@ function Editor({
   );
 }
 
-function SaveStatus({ status }: { status: Status | "readonly" }) {
+function SaveStatus({ status }: { status: Status }) {
   const text = {
     idle: "",
     saving: "저장 중…",
     saved: "저장됨",
-    error: "저장 실패 — 서버가 켜져 있나요?",
-    readonly: "읽기 전용",
+    error: "저장 실패 — 인터넷 연결을 확인해 주세요",
+    "logged-out": "로그인이 풀렸어요 — 다시 로그인해 주세요",
   }[status];
-  const color = status === "error" ? "text-error" : "text-fg-tertiary";
+  const color = status === "error" || status === "logged-out" ? "text-error" : "text-fg-tertiary";
   return <span className={`text-t7 ${color}`}>{text}</span>;
+}
+
+// 로그인 안 했을 때 노트 자리에 보이는 안내
+function LoginPrompt() {
+  const pathname = usePathname();
+  return (
+    <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
+      <p className="text-t4 font-bold">내 노트는 로그인하면 보여요</p>
+      <p className="mt-2 text-t6 text-fg-tertiary">레슨은 로그인 없이도 읽을 수 있어요.</p>
+      <Link
+        href={`/login?next=${encodeURIComponent(pathname)}`}
+        className="mt-6 rounded-md bg-primary px-5 py-3 text-t6 font-bold text-fg-on-primary active:scale-[0.98]"
+      >
+        로그인하고 쓰기
+      </Link>
+    </div>
+  );
 }
