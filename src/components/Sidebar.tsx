@@ -4,20 +4,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Lesson } from "@/lib/lessons";
-import type { NoteSummary } from "@/lib/notes";
+import { notifyNotesChanged, useMyNotes } from "@/lib/useMyNotes";
 import { roadmap } from "@/data/roadmap";
 
-type Props = {
-  lessons: Lesson[];
-  notes: NoteSummary[];
-  readOnly: boolean;
-};
-
-export default function Sidebar({ lessons, notes, readOnly }: Props) {
+export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false); // 모바일 메뉴
   const [creating, setCreating] = useState(false);
+  const { status, notes } = useMyNotes();
 
   const notedLessons = new Set(notes.filter((n) => n.lesson).map((n) => n.lesson));
   const pages = notes.filter((n) => !n.lesson);
@@ -30,7 +25,13 @@ export default function Sidebar({ lessons, notes, readOnly }: Props) {
     const { id } = await res.json();
     setOpen(false);
     router.push(`/pages/${id}`);
-    router.refresh();
+    notifyNotesChanged();
+  }
+
+  async function logout() {
+    await fetch("/api/auth", { method: "DELETE" });
+    notifyNotesChanged();
+    router.push("/");
   }
 
   const item = (active: boolean) =>
@@ -59,7 +60,7 @@ export default function Sidebar({ lessons, notes, readOnly }: Props) {
           <Link href="/" onClick={() => setOpen(false)} className={item(pathname === "/")}>
             🏠 홈
           </Link>
-          {!readOnly && (
+          {status === "me" && (
             <button onClick={createPage} disabled={creating} className={`${item(false)} w-full`}>
               ＋ 새 페이지
             </button>
@@ -99,7 +100,10 @@ export default function Sidebar({ lessons, notes, readOnly }: Props) {
           })}
 
           <p className="mt-6 mb-1 px-2 text-t7 font-semibold text-fg-tertiary">내 페이지</p>
-          {pages.length === 0 && <p className="px-2 py-1 text-t7 text-fg-disabled">＋ 새 페이지로 시작</p>}
+          {status === "guest" && <p className="px-2 py-1 text-t7 text-fg-disabled">로그인하면 보여요</p>}
+          {status === "me" && pages.length === 0 && (
+            <p className="px-2 py-1 text-t7 text-fg-disabled">＋ 새 페이지로 시작</p>
+          )}
           {pages.map((p) => (
             <Link
               key={p.id}
@@ -110,6 +114,18 @@ export default function Sidebar({ lessons, notes, readOnly }: Props) {
               📄 <span className="truncate">{p.title}</span>
             </Link>
           ))}
+
+          <div className="mt-8 border-t border-line-subtle pt-3">
+            {status === "me" ? (
+              <button onClick={logout} className={`${item(false)} w-full`}>
+                로그아웃
+              </button>
+            ) : status === "guest" ? (
+              <Link href={`/login?next=${encodeURIComponent(pathname)}`} onClick={() => setOpen(false)} className={item(false)}>
+                🔑 로그인
+              </Link>
+            ) : null}
+          </div>
         </div>
       </aside>
     </>
