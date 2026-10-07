@@ -1,50 +1,52 @@
 export const meta = {
-  title: "주문서는 어떻게 생겼나 — HTTP",
+  title: "의뢰서 양식 — HTTP",
   week: 1,
   order: 2,
   category: "server",
+  born: "로그인 안 하고 노트를 열면 401, id를 대문자로 쓰면 400, 배포 서버가 멈췄을 땐 504. 숫자가 다 다른데 무슨 뜻인지 몰랐다.",
   summary: "요청·응답의 생김새, 메서드, 상태 코드, REST",
   minutes: 30,
   goals: [
-    "HTTP 요청의 4부분(메서드·경로·헤더·본문)을 짚을 수 있다",
-    "GET·POST·PUT·DELETE를 언제 쓰는지 안다",
-    "상태 코드를 보고 누구 잘못인지(4xx/5xx) 구분한다",
+    "HTTP 요청의 4부분을 짚는다",
+    "GET·POST·PUT·PATCH·DELETE를 구분한다",
+    "상태 코드 첫 자리로 누구 문제인지 안다",
   ],
   questions: [
     "HTTP 요청은 어떤 4부분으로 되어 있나?",
-    "GET·POST·PUT·DELETE를 내 노트 API로 예를 들면?",
-    "400, 401, 403, 404, 500은 각각 언제 쓰나?",
+    "GET·POST·PUT·PATCH·DELETE를 내 노트 API로 예를 들면?",
+    "400, 401, 403, 404, 500, 504는 각각 언제 나오나?",
     "당당 API 하나를 골라 요청과 응답을 직접 그려보기",
   ],
 };
 
-## 주문서에도 양식이 있어요
+## 🎬 장면
 
-지난 레슨에서 API를 **주문서**라고 했죠. 웹에서 이 주문서의 양식 이름이 **HTTP**예요.
-양식이 정해져 있으니 어떤 홀(브라우저, 앱)이든 어떤 주방(Spring, FastAPI)이든 서로 알아들어요.
+지난 레슨에서 API를 **진료 의뢰서**라고 했다. 웹에서 이 의뢰서 양식의 이름이 **HTTP**다.
+양식이 정해져 있어서, 어떤 창구(브라우저·앱)든 어떤 진료실(Spring·FastAPI)이든 서로 알아듣는다.
+
+## 🗺 의뢰서의 네 칸
 
 <Analogy
   pairs={[
-    { from: "무엇을 해달라", to: "메서드", desc: "GET 보여줘 · POST 새로 만들어줘 · PUT 통째로 바꿔줘 · DELETE 지워줘" },
-    { from: "어떤 메뉴를", to: "경로", desc: "/api/notes/abc — 노트 중에 abc" },
-    { from: "주문서 귀퉁이 메모", to: "헤더", desc: "내용 형식, 누가 보냈는지(로그인 토큰) 같은 부가 정보" },
-    { from: "주문 내용", to: "본문(body)", desc: "실제 데이터. 보통 JSON. 조회(GET)에는 없어요." },
+    { from: "무엇을 해 주세요", to: "메서드", desc: "GET 보여줘 · POST 새로 만들어줘 · PUT 통째로 바꿔줘 · PATCH 일부만 바꿔줘 · DELETE 지워줘" },
+    { from: "누구의 차트를", to: "경로", desc: "/api/notes/abc — 노트 중에 abc" },
+    { from: "의뢰서 귀퉁이 메모", to: "헤더", desc: "내용 형식, 본인 확인용 입원 팔찌(쿠키) 같은 부가 정보" },
+    { from: "의뢰 내용", to: "본문(body)", desc: "실제 데이터. 보통 JSON. 조회(GET)에는 없다" },
   ]}
 />
 
-## 실제 주문서 한 장
-
-오른쪽 노트에 글자를 칠 때마다 이 사이트가 실제로 보내는 요청이에요.
+오른쪽 노트에서 Enter를 칠 때 이 사이트가 실제로 보내는 의뢰서:
 
 ```http
-PUT /api/notes/w1-02-http HTTP/1.1       ← 메서드 + 경로
-Host: localhost:3123                      ← 헤더
-Content-Type: application/json            ← 헤더: "본문은 JSON이에요"
+PUT /api/notes/w1-02-http HTTP/1.1      ← 메서드 + 경로
+Host: dahyun-log.vercel.app             ← 헤더
+Content-Type: application/json          ← 헤더: "본문은 JSON"
+Cookie: dahyun_session=...              ← 헤더: 입원 팔찌 (로그인 증표)
 
-{"title": "...", "blocks": [...]}         ← 본문
+{"title": "...", "blocks": [...]}        ← 본문
 ```
 
-답장(응답)은 이렇게 생겼어요. 맨 위 **상태 코드**가 "어떻게 됐는지"를 숫자로 알려줘요.
+답장(응답)의 맨 윗줄 **상태 코드**가 "어떻게 됐는지"를 숫자로 알려준다.
 
 ```http
 HTTP/1.1 200 OK
@@ -53,87 +55,83 @@ Content-Type: application/json
 {"updatedAt": "2026-10-08T12:00:00.000Z"}
 ```
 
-## 성공할 때와 실패할 때
-
-같은 주문서라도 내용에 따라 결과가 달라져요. 두 개를 차례로 돌려 보세요.
+## 🗺 통과할 때와 막힐 때
 
 <FlowSim
-  title="노트 저장 — 성공"
+  title="노트 저장 — 통과"
   startLabel="저장 요청 보내기"
   nodes={[
-    { id: "fe", label: "홀", sub: "노트 에디터" },
-    { id: "api", label: "주문서", sub: "PUT 요청" },
-    { id: "be", label: "주방", sub: "route.ts" },
-    { id: "db", label: "냉장고", sub: "notes/ 파일" },
+    { id: "fe", label: "접수창구", sub: "노트 에디터" },
+    { id: "api", label: "의뢰서", sub: "PUT" },
+    { id: "be", label: "진료실", sub: "route.ts" },
+    { id: "db", label: "기록실", sub: "Supabase" },
   ]}
   steps={[
-    { at: "fe", say: "글자를 치고 0.8초가 지났어요. 저장할 때예요." },
-    { at: "api", say: "PUT 주문서를 보내요.", packet: "PUT /api/notes/w1-02-http\nContent-Type: application/json\n\n{ \"title\": \"...\", \"blocks\": [...] }" },
-    { at: "be", say: "주방이 검사해요. id에 소문자·숫자·하이픈만 있나? 본문에 blocks가 있나? → 통과" },
-    { at: "db", say: "notes/w1-02-http.json 과 .md 파일에 써요." },
-    { at: "api", say: "성공 답장이 돌아가요.", packet: "200 OK\n{ \"updatedAt\": \"2026-10-08T12:00:00.000Z\" }", tone: "ok" },
-    { at: "fe", say: "오른쪽 위에 '저장됨'이 떠요." },
+    { at: "fe", say: "Enter를 쳤다. 저장할 때다." },
+    { at: "api", say: "PUT 의뢰서를 보낸다. 쿠키(입원 팔찌)도 같이 간다.", packet: "PUT /api/notes/w1-02-http\nCookie: dahyun_session=...\n\n{ \"title\": \"...\", \"blocks\": [...] }" },
+    { at: "be", say: "진료실이 확인한다. 팔찌가 진짜인가? id 모양이 맞나? → 통과" },
+    { at: "db", say: "기록실 notes 표에 적는다 (있으면 고치고, 없으면 새로)." },
+    { at: "api", say: "통과 답장.", packet: "200 OK\n{ \"updatedAt\": \"...\" }", tone: "ok" },
+    { at: "fe", say: "오른쪽 위에 '✓ 저장됨'." },
   ]}
 />
 
 <FlowSim
-  title="노트 저장 — 잘못된 주문서"
-  startLabel="잘못된 요청 보내기"
+  title="노트 열기 — 팔찌 없이"
+  startLabel="로그인 없이 열기"
   nodes={[
-    { id: "fe", label: "홀", sub: "curl" },
-    { id: "api", label: "주문서", sub: "PUT 요청" },
-    { id: "be", label: "주방", sub: "route.ts" },
-    { id: "db", label: "냉장고", sub: "notes/ 파일" },
+    { id: "fe", label: "접수창구", sub: "브라우저" },
+    { id: "api", label: "의뢰서", sub: "GET" },
+    { id: "be", label: "진료실", sub: "route.ts" },
+    { id: "db", label: "기록실", sub: "Supabase" },
   ]}
   steps={[
-    { at: "fe", say: "누군가 id에 대문자를 넣어서 보내요." },
-    { at: "api", say: "주문서가 주방으로 가요.", packet: "PUT /api/notes/ABC" },
-    { at: "be", say: "주방이 검사해요. 대문자는 허용 안 함 → 여기서 멈춰요. 냉장고는 건드리지도 않아요.", tone: "error" },
-    { at: "api", say: "실패 답장이 돌아가요. 4로 시작하면 '보낸 쪽 잘못'이에요.", packet: "400 Bad Request\n{ \"message\": \"잘못된 id\" }", tone: "error" },
-    { at: "fe", say: "보낸 쪽이 주문서를 고쳐서 다시 보내야 해요." },
+    { at: "fe", say: "로그아웃 상태에서 노트를 연다." },
+    { at: "api", say: "의뢰서에 쿠키(팔찌)가 없다.", packet: "GET /api/notes/w1-02-http" },
+    { at: "be", say: "진료실: '본인 확인이 안 돼요.' 기록실은 문도 안 연다.", tone: "error" },
+    { at: "api", say: "4로 시작 = 보낸 쪽이 고쳐야 한다.", packet: "401 Unauthorized\n{ \"message\": \"로그인이 필요해요\" }", tone: "error" },
+    { at: "fe", say: "그래서 노트 자리에 '로그인하고 쓰기' 버튼이 나온다." },
   ]}
 />
 
-## 상태 코드 읽는 법
+## 🗺 상태 코드 — 첫 자리만 봐도 반은 안다
 
-| 코드 | 뜻 | 식당으로 치면 | 이 사이트에서 |
+| 코드 | 뜻 | 병원으로 | 이 사이트에서 실제로 |
 |---|---|---|---|
-| 200 | 성공 | 주문 완료 | 노트 읽기·저장 |
-| 201 | 새로 만듦 | 신메뉴 등록 완료 | ＋ 새 페이지 |
-| 400 | 요청이 이상함 | 주문서를 못 알아봄 | id에 대문자 |
-| 401 | 누군지 모름 | "회원이세요?" | (당당) 로그인 안 함 |
-| 403 | 권한 없음 | "직원만 들어갈 수 있어요" | 배포 사이트에서 저장 |
-| 404 | 없음 | 없는 메뉴 | 아직 안 쓴 노트 |
-| 500 | 서버 오류 | 주방에 불남 | 서버 코드 버그 |
+| 200 | 성공 | 진료 완료 | 노트 읽기·저장 |
+| 201 | 새로 만듦 | 새 차트 생성 | ＋ 새 페이지, 📁 새 폴더 |
+| 400 | 요청이 이상함 | 의뢰서를 못 알아봄 | id에 대문자 |
+| 401 | 누군지 모름 | 팔찌가 없음 | 로그인 안 함 |
+| 403 | 권한 없음 | 이 진료과는 직원만 | (당당) 남의 기록 보기 |
+| 404 | 없음 | 그런 차트 없음 | 아직 안 쓴 노트 |
+| 500 | 서버 오류 | 진료실에 문제 | 서버 코드 버그 |
+| 504 | 시간 초과 | 진료실이 기록실 답을 하염없이 기다림 | 배포 첫날의 DB 연결 멈춤 |
 
-<Callout type="핵심">**4xx는 보낸 쪽 잘못, 5xx는 주방 잘못.** 이것만 기억해도 디버깅 방향이 정해져요.</Callout>
+<Callout type="핵심">**4xx = 보낸 쪽(창구)이 고칠 것, 5xx = 받는 쪽(진료실)이 고칠 것.**</Callout>
 
-## 주소 짓는 규칙 — REST
+## 🗺 주소 짓는 규칙 — REST
 
-주소에는 **무엇(명사)**, 행동은 **메서드**로 나눠 적어요.
+주소에는 **무엇(명사)**, 행동은 **메서드**로.
 
-- 좋음: `PUT /api/notes/abc` — "노트 abc를 바꿔줘"
-- 나쁨: `POST /api/saveNote?id=abc` — 행동이 주소에 섞임
+- 좋음: `PATCH /api/notes/abc` — "노트 abc를 일부 바꿔줘 (폴더 옮기기)"
+- 나쁨: `POST /api/moveNote?id=abc` — 행동이 주소에 섞임
 
-당당 계획서의 `POST /visits/{id}/reports`도 같은 규칙이에요. "이 진료(visit)에 리포트를 새로 만들어줘".
-
-## 직접 해보기 (터미널)
-
-사이트가 켜진 상태에서 터미널에 쳐 보세요. `-i`는 답장의 상태 코드와 헤더까지 보여줘요.
+## 🛠 손으로 (터미널)
 
 ```bash
-# 1) 읽기 — 아직 안 썼으면 404, 썼으면 200
-curl -i localhost:3123/api/notes/w1-02-http
+# 1) 로그인 없이 — 몇 번이 나올까?
+curl -i https://dahyun-log.vercel.app/api/notes
 
-# 2) 잘못된 주문서 — 몇 번이 나올까?
-curl -i localhost:3123/api/notes/ABC
-
-# 3) 터미널에서 노트 만들기 — 사이드바 '내 페이지'에 생겨요
-curl -i -X PUT localhost:3123/api/notes/curl-test \
-  -H "Content-Type: application/json" \
-  -d '{"title":"curl로 만든 노트","lesson":null,"blocks":[],"markdown":"hello"}'
+# 2) 레슨 페이지는 누구나 — 몇 번?
+curl -s -o /dev/null -w "%{http_code}\n" https://dahyun-log.vercel.app/learn/w1-02-http
 ```
 
-3번은 확인 후 `notes/curl-test.*` 파일을 지워요.
+`-i`는 답장의 상태 줄과 헤더까지 보여준다.
 
-<KeySentence note="상태 코드 첫 자리만 봐도 누구 문제인지 보여요.">4로 시작하면 내가 잘못 보냈고, 5로 시작하면 서버가 잘못했다</KeySentence>
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="401, 400, 504 — 숫자가 떴는데 뭘 고쳐야 할지 모른다"
+  cause="상태 코드를 '에러'로 한 덩어리로 봐서"
+  fix="첫 자리부터 본다. 4면 내 요청(로그인·값)을, 5면 서버·DB를 본다"
+/>

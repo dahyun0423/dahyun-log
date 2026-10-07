@@ -3,6 +3,7 @@ export const meta = {
   week: 1,
   order: 4,
   category: "infra",
+  born: "당당 계획서 1주차 산출물에 'Docker Compose 환경 구성'이 있는데, 컨테이너가 뭔지부터 한 문장으로 말을 못 하겠다.",
   summary: "이미지·컨테이너·포트·볼륨, 그리고 docker-compose",
   minutes: 40,
   goals: [
@@ -18,29 +19,29 @@ export const meta = {
   ],
 };
 
-## "제 컴퓨터에선 되는데요?"
+## 🎬 "제 컴퓨터에선 되는데요?"
 
 승민님 맥에서는 되는데 내 맥에서는 안 되고, 서버(EC2)에서는 또 안 돼요. Postgres 버전이 다르거나 설정이 달라서예요.
 **Docker**는 프로그램과 실행 환경을 통째로 상자에 담아서, 어디서든 똑같이 돌아가게 해요.
 
-## 프랜차이즈로 생각해요
+## 🗺 분원을 내는 것처럼
 
 <Analogy
   pairs={[
-    { from: "프랜차이즈 매뉴얼", to: "이미지", desc: "postgres:16 같은 설계도. 받아만 두면 몇 번이든 똑같이 차릴 수 있어요. (Java의 클래스)" },
-    { from: "매뉴얼대로 차린 지점", to: "컨테이너", desc: "이미지를 실제로 실행한 것. 지점은 여러 개 낼 수 있어요. (new로 만든 객체)" },
-    { from: "지점 출입문 번호", to: "포트 연결 -p", desc: "내 컴퓨터의 문 번호와 컨테이너 안의 문 번호를 이어줘요." },
-    { from: "지점 밖 창고", to: "볼륨 -v", desc: "지점을 닫아도(컨테이너 삭제) 재료(데이터)가 남는 곳." },
+    { from: "표준 병원 설계도", to: "이미지", desc: "postgres:16 같은 설계도. 받아만 두면 몇 번이든 똑같은 병원을 지을 수 있어요. (Java의 클래스)" },
+    { from: "설계도대로 개원한 분원", to: "컨테이너", desc: "이미지를 실제로 실행한 것. 분원은 여러 개 낼 수 있어요. (new로 만든 객체)" },
+    { from: "분원 출입문 번호", to: "포트 연결 -p", desc: "내 컴퓨터의 문 번호와 컨테이너 안의 문 번호를 이어줘요." },
+    { from: "분원 밖 차트 보관 창고", to: "볼륨 -v", desc: "분원을 닫아도(컨테이너 삭제) 차트(데이터)가 남는 곳." },
   ]}
 />
 
-## 명령 한 줄에 일어나는 일
+## 🗺 명령 한 줄에 일어나는 일
 
 <FlowSim
   title="docker run postgres:16"
   startLabel="명령 실행하기"
   nodes={[
-    { id: "hub", label: "Docker Hub", sub: "매뉴얼 창고" },
+    { id: "hub", label: "Docker Hub", sub: "설계도 보관소" },
     { id: "image", label: "이미지", sub: "postgres:16" },
     { id: "container", label: "컨테이너", sub: "dangdang-db" },
     { id: "me", label: "내 컴퓨터", sub: "localhost:5432" },
@@ -54,7 +55,7 @@ export const meta = {
   ]}
 />
 
-## 직접 띄워 봐요
+## 🛠 손으로 띄워 봐요
 
 ```bash
 docker run --name dangdang-db \
@@ -87,7 +88,7 @@ docker exec -it dangdang-db psql -U postgres -d dangdang  # 컨테이너 안 Pos
 ## 볼륨이 진짜 남는지 확인
 
 ```bash
-docker rm -f dangdang-db     # 지점 폐업 (컨테이너 삭제)
+docker rm -f dangdang-db     # 분원 폐원 (컨테이너 삭제)
 # 위의 docker run 명령을 다시 실행
 docker exec -it dangdang-db psql -U postgres -d dangdang -c '\dt'
 ```
@@ -121,13 +122,19 @@ docker compose ps        # 상태 보기
 docker compose down      # 전부 끄기 (볼륨은 남아요)
 ```
 
-<Callout type="요약">이미지 = 매뉴얼, 컨테이너 = 지점, -p = 출입문, -v = 바깥 창고, compose = 여러 지점을 한 장에 적은 개업 계획서.</Callout>
+<Callout type="요약">이미지 = 설계도, 컨테이너 = 분원, -p = 출입문, -v = 바깥 차트 창고, compose = 여러 분원을 한 장에 적은 개원 계획서.</Callout>
 
-## 직접 해보기
+## 🛠 당당에 적용
 
 1. `docker run`으로 Postgres를 띄우고 테이블을 하나 만들어요
 2. 컨테이너를 지웠다가 다시 띄워서 테이블이 남는지 확인해요
 3. 당당 레포에 `compose.yaml`을 **직접** 써서 db와 redis를 한 번에 띄워요
 4. 에러가 나면 ＋ 새 페이지로 "에러 기록"을 만들어서 메시지와 해결법을 남겨요
 
-<KeySentence note="환경 차이로 생기는 버그가 사라져요.">이미지는 설계도, 컨테이너는 그걸로 차린 지점이다</KeySentence>
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="승민님 맥에선 되는데 내 맥·서버에선 안 된다"
+  cause="DB 버전·설정이 컴퓨터마다 달라서"
+  fix="실행 환경을 이미지로 고정하고 compose.yaml 한 장으로 모두 같은 분원을 연다"
+/>

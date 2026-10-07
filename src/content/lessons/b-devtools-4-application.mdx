@@ -1,0 +1,100 @@
+export const meta = {
+  title: "Application — 쿠키·저장소·서비스 워커",
+  track: "basics",
+  topic: "devtools",
+  week: 0,
+  order: 4,
+  category: "server",
+  born: "로그인하면 30일 동안 유지된다는데, 그 '로그인했다'는 정보가 내 컴퓨터 어디에 있는지 몰랐다.",
+  summary: "쿠키 열 읽기, HttpOnly·Secure·SameSite, localStorage, 서비스 워커·푸시(당당 PWA), 사이트 데이터 지우기",
+  minutes: 20,
+  goals: ["내 로그인 쿠키의 속성을 읽는다", "쿠키와 localStorage를 구분한다", "서비스 워커와 푸시를 개발자 도구로 시험한다"],
+  questions: [
+    "dahyun_session의 Expires·HttpOnly·Secure·SameSite 값",
+    "document.cookie로 로그인 쿠키가 안 보이는 이유",
+    "'배포했는데 옛날 화면'일 때 서비스 워커에서 볼 것",
+    "Clear site data와 쿠키만 지우기의 차이",
+  ],
+};
+
+## 🎬 장면
+
+로그인하면 서버가 **입원 팔찌(쿠키)** 를 채워 준다. Application은 그 팔찌와, 브라우저가 맡아 둔 **보관함 전부**를 보는 곳이다.
+당당은 PWA(앱처럼 설치되는 웹)라서 **서비스 워커·푸시 알림**도 여기서 시험한다.
+
+## 🗺 왼쪽 메뉴 지도
+
+| 묶음 | 안에 있는 것 | 이 사이트·당당에서 |
+|---|---|---|
+| **Application** | Manifest, Service workers, Storage | 당당 PWA 설치·알림 |
+| **Storage** | Local storage, Session storage, IndexedDB, **Cookies**, Cache storage | 로그인 쿠키, 폴더 펼침 상태 |
+| **Background services** | Push messaging, Notifications, Background sync … | 당당 혈당 측정 알림 |
+
+## 🗺 쿠키 표 읽기 (Storage → Cookies → 사이트 주소)
+
+| 열 | 내 `dahyun_session` | 뜻 |
+|---|---|---|
+| Value | 긴 글자 | 서명된 증표. 고치면 서명이 안 맞아 서버가 거절 |
+| **Expires / Max-Age** | 30일 뒤 | 이때까지 로그인 유지. "Session"이면 브라우저 닫으면 끝 |
+| Domain / Path | 사이트 / `/` | 어느 주소에 실려 가나 |
+| **HttpOnly** | ✓ | 자바스크립트로 못 읽음 → 나쁜 스크립트가 끼어도(XSS) 못 훔침 |
+| **Secure** | ✓ (배포) | HTTPS로만 전송 |
+| **SameSite** | Lax | 다른 사이트에서 몰래 보낸 요청엔 안 실림 (CSRF 완화) |
+| Partition Key | 비어 있음 | 다른 사이트 안에 끼워 넣어졌을 때 쓰는 칸 |
+
+- 위쪽 **Only show cookies with an issue** = 문제 있는 쿠키만
+- 칸을 **더블클릭하면 편집**, **Delete selected / Clear all**로 삭제
+- Console에서 `document.cookie` → `dahyun_session`이 **안 보인다**. HttpOnly라서. 하지만 이 표에는 보인다
+
+<Callout type="핵심">로그인 증표는 localStorage가 아니라 **HttpOnly 쿠키**에 둔다. localStorage는 아무 스크립트나 읽을 수 있다.</Callout>
+
+## 🗺 쿠키 vs localStorage vs sessionStorage
+
+| | 쿠키 | localStorage | sessionStorage |
+|---|---|---|---|
+| 서버로 자동 전송 | ✓ 요청마다 | ✗ | ✗ |
+| JS로 읽기 | HttpOnly면 ✗ | ✓ | ✓ |
+| 언제까지 | Expires까지 | 지울 때까지 | 탭 닫으면 끝 |
+| 이 사이트 | 로그인 | `page-tree-open`(폴더), `learn-note-open`(노트 접기) | — |
+
+## 🗺 서비스 워커 (당당 PWA에서 중요)
+
+서비스 워커 = 사이트와 인터넷 사이에 서 있는 **당직 간호사**. 꺼져 있어도 푸시를 받고, 오프라인일 때 저장해 둔 화면을 꺼내 준다.
+
+| 버튼·체크 | 언제 |
+|---|---|
+| **Update on reload** | 개발 중 필수. 새로고침마다 새 버전 적용 ("배포했는데 옛날 화면" 방지) |
+| **Bypass for network** | 서비스 워커를 건너뛰고 진짜 네트워크로 |
+| **Offline** | 오프라인 흉내 → 오프라인 화면 확인 |
+| **Push** | 가짜 푸시 한 방 보내기 (내용 없는 푸시) |
+| **Unregister** | 서비스 워커 지우기 |
+
+- **Background services → Push messaging → Record**: 푸시 기록을 **최대 3일** 남김. 개발자 도구를 닫아도 기록
+- **Manifest**: 앱 이름·아이콘. 설치가 안 되면 **Installability**에 이유가 뜸
+- **Storage → Clear site data**: 쿠키·저장소·캐시·서비스 워커를 **한 번에** 초기화
+
+## ⚠️ 초보가 자주 하는 실수
+
+- 로그인 토큰을 localStorage에서 찾음 → HttpOnly 쿠키는 **Cookies**에만
+- 서비스 워커가 옛 파일을 계속 줌 → **Update on reload**
+- **Bypass for network**(서비스 워커 건너뛰기)와 **Disable cache**(HTTP 캐시 끄기)를 헷갈림
+- 쿠키만 지우고 "처음 상태"라고 믿음 → **Clear site data**
+
+## 🛠 손으로
+
+1. 로그인 후 Cookies에서 `dahyun_session`의 **Expires·HttpOnly·Secure·SameSite**를 노트에 표로 적기 (로컬은 Secure가 비어 있고 배포는 ✓ — 왜일까?)
+2. Console에 `document.cookie` → 로그인 쿠키가 안 보이는 것 확인
+3. Local storage에서 `page-tree-open` 값을 지우고 새로고침 → 사이드바 폴더가 다 접힌다
+4. (당당 PWA가 생기면) **Push messaging → Record** 켜고 Service workers의 **Push** 버튼 → push 이벤트가 기록되는지
+
+## 📚 출처
+
+- [Application panel](https://developer.chrome.com/docs/devtools/application) · [Cookies](https://developer.chrome.com/docs/devtools/application/cookies) · [Progressive Web Apps](https://developer.chrome.com/docs/devtools/progressive-web-apps) · [Background services](https://developer.chrome.com/docs/devtools/javascript/background-services)
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="로그인이 자꾸 풀린다 / 배포했는데 옛날 화면이 나온다"
+  cause="쿠키의 만료·SameSite·Secure 조건이 안 맞거나, 서비스 워커가 옛 파일을 주고 있다"
+  fix="Cookies에서 Expires·Secure·SameSite + Only show cookies with an issue / Service workers의 Update on reload, 안 되면 Clear site data"
+/>

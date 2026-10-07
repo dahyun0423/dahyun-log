@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { Lesson } from "@/lib/lessons";
 import { notifyNotesChanged, useMyNotes } from "@/lib/useMyNotes";
 import PageTree from "@/components/sidebar/PageTree";
+import { basicsTopics, isBasics } from "@/data/basics";
 import { roadmap } from "@/data/roadmap";
 
 export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
@@ -69,7 +70,7 @@ export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
 
           <p className="mt-6 mb-1 px-2 text-t7 font-semibold text-fg-tertiary">9주 학습</p>
           {roadmap.map((w) => {
-            const weekLessons = lessons.filter((l) => l.week === w.week);
+            const weekLessons = lessons.filter((l) => !isBasics(l) && l.week === w.week);
             return (
               <details key={w.week} open={weekLessons.some((l) => pathname === `/learn/${l.slug}`) || w.week === 1}>
                 <summary className={`${item(false)} cursor-pointer list-none`}>
@@ -95,6 +96,36 @@ export default function Sidebar({ lessons }: { lessons: Lesson[] }) {
                       </Link>
                     ))
                   )}
+                </div>
+              </details>
+            );
+          })}
+
+          <p className="mt-6 mb-1 px-2 text-t7 font-semibold text-fg-tertiary">🧰 기초 트랙</p>
+          {basicsTopics.map((t) => {
+            const cards = lessons.filter((l) => isBasics(l) && l.topic === t.slug);
+            const done = cards.filter((l) => notedLessons.has(l.slug)).length;
+            return (
+              <details key={t.slug} open={cards.some((l) => pathname === `/learn/${l.slug}`)}>
+                <summary className={`${item(false)} cursor-pointer list-none`}>
+                  <span className="text-fg-tertiary">▸</span>
+                  {t.icon} {t.name}
+                  <span className="ml-auto text-[12px] text-fg-tertiary">
+                    {done}/{cards.length}
+                  </span>
+                </summary>
+                <div className="ml-4">
+                  {cards.map((l) => (
+                    <Link
+                      key={l.slug}
+                      href={`/learn/${l.slug}`}
+                      onClick={() => setOpen(false)}
+                      className={item(pathname === `/learn/${l.slug}`)}
+                    >
+                      <span className={`size-1.5 shrink-0 rounded-full ${notedLessons.has(l.slug) ? "bg-success" : "bg-line-strong"}`} />
+                      <span className="truncate">{l.title}</span>
+                    </Link>
+                  ))}
                 </div>
               </details>
             );

@@ -3,6 +3,7 @@ export const meta = {
   week: 1,
   order: 3,
   category: "frontend",
+  born: "PR 설명에 'Next.js + Tailwind + MDX 기반'이라고 써 놓고, 정작 그게 무슨 뜻인지 설명을 못 했다. 껍데기만 요란한 느낌.",
   summary: "Next.js·React·TypeScript·Tailwind를 Spring에 빗대서",
   minutes: 25,
   goals: [
@@ -17,13 +18,13 @@ export const meta = {
   ],
 };
 
-## 낯선 단어 다섯 개
+## 🎬 낯선 단어 다섯 개
 
 PR에 "Next.js + Tailwind + MDX"라고 적혀 있었죠. 하나씩 이미 아는 것에 붙여 볼게요.
 
 <Analogy
   pairs={[
-    { from: "Spring Boot", to: "Next.js", desc: "웹사이트를 만들 때 틀과 규칙을 주는 프레임워크. 홀과 작은 주방을 한 건물에 같이 둘 수 있어요." },
+    { from: "Spring Boot", to: "Next.js", desc: "웹사이트를 만들 때 틀과 규칙을 주는 프레임워크. 접수창구(화면)와 작은 진료실(API)을 한 건물에 같이 둘 수 있어요." },
     { from: "JSP include", to: "React", desc: "화면을 부품(컴포넌트)으로 쪼개서 재사용해요. 사이드바, 태그, 시뮬레이터가 다 부품이에요." },
     { from: "Java의 타입", to: "TypeScript", desc: "JavaScript에 타입을 붙인 것. 실수를 실행 전에 잡아줘요." },
     { from: "CSS 파일", to: "Tailwind", desc: ".card { padding:16px } 대신 className=\"p-4\" 처럼 클래스 이름으로 스타일을 줘요." },
@@ -31,7 +32,7 @@ PR에 "Next.js + Tailwind + MDX"라고 적혀 있었죠. 하나씩 이미 아는
   ]}
 />
 
-## 폴더가 곧 주소예요
+## 🗺 폴더가 곧 주소예요
 
 Spring에서는 `@GetMapping("/learn/{slug}")`처럼 주소를 코드에 적었죠. Next.js는 **폴더 이름**이 주소가 돼요.
 
@@ -43,7 +44,7 @@ Spring에서는 `@GetMapping("/learn/{slug}")`처럼 주소를 코드에 적었�
 
 <Callout type="핵심">`[slug]`의 대괄호는 "이 자리는 바뀌는 값"이라는 뜻이에요. Spring의 `@PathVariable`과 같아요.</Callout>
 
-## 주소를 열면 생기는 일
+## 🗺 주소를 열면 생기는 일
 
 <FlowSim
   title="이 레슨 페이지가 열리기까지"
@@ -64,7 +65,7 @@ Spring에서는 `@GetMapping("/learn/{slug}")`처럼 주소를 코드에 적었�
   ]}
 />
 
-## 색은 어디서 올까
+## 🗺 색은 어디서 올까
 
 `src/app/globals.css`에 세 층이 있어요. Figma에서 변수를 Primitive와 Semantic으로 나눈 것과 같은 구조예요.
 
@@ -76,10 +77,16 @@ Spring에서는 `@GetMapping("/learn/{slug}")`처럼 주소를 코드에 적었�
 
 <Callout type="요약">다크모드는 2층의 값만 바꿔요. 그래서 화면 코드는 하나도 안 고쳐도 색이 전부 바뀌어요.</Callout>
 
-## 직접 해보기
+## 🛠 손으로
 
 1. `globals.css`에서 `--primary: var(--blue-500);`를 `var(--red-500)`으로 바꾸고 저장해요. 사이트가 전부 빨개지면 성공. **다시 되돌려요.**
 2. 이 노트에 아무거나 쓰고, VS Code에서 `notes/w1-03-this-site.json`을 열어 봐요.
 3. `src/app/api/notes/[id]/route.ts`를 열고 `GET`과 `PUT` 함수를 찾아요. 지난 레슨의 시뮬레이터와 같은 흐름인지 비교해 봐요.
 
-<KeySentence note="처음 보는 기술도 아는 것과 짝지으면 절반은 안다.">Next.js는 폴더가 곧 주소인 React용 Spring이다</KeySentence>
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="PR에 기술 이름을 썼는데 설명을 못 한다"
+  cause="새 단어를 아는 것(Spring·JSP·노션)에 붙여 보지 않아서"
+  fix="단어마다 '아는 것 = 새 것' 한 줄로 바꿔 쓴다. Next.js = 폴더가 곧 주소인 React용 Spring"
+/>

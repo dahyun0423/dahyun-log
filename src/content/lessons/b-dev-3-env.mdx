@@ -1,0 +1,52 @@
+export const meta = {
+  title: "환경 변수 — 비밀은 코드 밖에",
+  track: "basics",
+  topic: "dev",
+  week: 0,
+  order: 3,
+  category: "server",
+  born: "DB 주소를 붙여 넣다 앞에 공백이 들어갔고, 확인하다 비밀번호가 로그에 찍혀서 DB 비밀번호를 바꿔야 했다.",
+  summary: ".env.local, process.env, Vercel 환경 세 개, 비밀값 다루는 습관",
+  minutes: 15,
+  goals: ["비밀값을 코드 대신 환경 변수에 둔다", "development·preview·production을 구분한다", "비밀값을 화면에 찍지 않고 확인한다"],
+  questions: ["환경 변수를 쓰는 이유 두 가지", "로컬은 되는데 배포에서 안 될 때 환경 변수 쪽에서 확인할 것", "비밀값을 '보지 않고' 맞는지 확인하는 방법"],
+};
+
+## 🎬 장면
+
+환경 변수 = **병원 금고 번호표**. 코드(진료 매뉴얼)에는 "금고 3번에서 꺼내 쓰세요"라고만 적고, 진짜 비밀번호는 금고에 둔다.
+매뉴얼은 GitHub에 공개돼도 괜찮지만 금고는 아니다.
+
+## 🗺 이 사이트의 금고
+
+| 이름 | 무엇 | 코드에서 |
+|---|---|---|
+| `DATABASE_URL` | Supabase DB 주소 (비밀번호 포함) | `process.env.DATABASE_URL` |
+| `SITE_PASSWORD` | 로그인 비밀번호 | `process.env.SITE_PASSWORD` |
+| `AUTH_SECRET` | 쿠키 서명 열쇠 | `process.env.AUTH_SECRET` |
+
+- **로컬**: `.env.local` 파일 (`.gitignore`라 GitHub에 안 올라감)
+- **Vercel**: 환경이 셋 — `development`(로컬로 받아 쓰는 값) / `preview`(PR 미리보기) / `production`(실제 사이트)
+- **값을 바꾸면** 다시 배포해야 반영된다. 로컬은 dev 서버 재시작
+
+```bash
+vercel env ls                          # 어떤 이름이 어느 환경에 있나 (값은 안 보임)
+vercel env add 이름 production         # 넣기 — 값은 직접 타이핑
+vercel env pull .env.local --yes       # development 값을 로컬로 받기
+```
+
+## 🗺 내가 겪은 함정 세 개
+
+1. **앞 공백·끝 잘림** — 붙여 넣기에서 생긴다. 눈으로 못 보니 **점검 스크립트**로 확인: `node --env-file=.env.local scripts/check-env.mjs`
+2. **환경마다 값이 다름** — production에 다른 비밀번호가 들어가 배포 사이트 로그인이 안 됐다
+3. **값이 로그에 찍힘** — 에러 메시지에 DB 주소가 통째로 나왔다 → **노출되면 지우는 게 아니라 바꾼다**
+
+<Callout type="핵심">비밀값은 "맞는지"만 확인한다. 길이, 앞뒤 공백, 시작·끝 모양. 값 자체를 화면에 띄우지 않는다.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="로컬은 되는데 배포에선 로그인·DB가 안 된다"
+  cause="환경(development·production)마다 들어간 값이 다르거나, 바꾼 뒤 재배포를 안 해서"
+  fix="vercel env ls로 환경별 존재 확인 → 값을 다시 넣고 재배포. 점검은 값을 찍지 않는 스크립트로"
+/>
