@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { Progress } from "@/data/quiz";
 import Tag from "@/components/Tag";
 import { categories } from "@/data/categories";
 import { roadmap } from "@/data/roadmap";
@@ -11,6 +13,16 @@ import { useMyNotes } from "@/lib/useMyNotes";
 // 홈 화면 — 내 노트 진행 상황은 로그인해야 보여서 브라우저에서 불러온다
 export default function HomeDashboard({ lessons: all }: { lessons: Lesson[] }) {
   const { status, notes } = useMyNotes();
+  // 오늘 복습할 문제 수 (로그인했을 때만)
+  const [dueCount, setDueCount] = useState<number | null>(null);
+  useEffect(() => {
+    void fetch("/api/quiz").then(async (r) => {
+      if (!r.ok) return;
+      const rows = (await r.json()) as Progress[];
+      const now = Date.now();
+      setDueCount(rows.filter((p) => new Date(p.dueAt).getTime() <= now).length);
+    });
+  }, []);
   const lessons = all.filter((l) => !isBasics(l));
   const cards = all.filter(isBasics);
 
@@ -53,6 +65,20 @@ export default function HomeDashboard({ lessons: all }: { lessons: Lesson[] }) {
           <p className="mt-1 text-t6 opacity-90">{next.summary}</p>
         </Link>
       )}
+
+      <Link
+        href="/review"
+        className="mt-3 flex items-center gap-4 rounded-xl border border-line p-5 transition-transform duration-100 hover:bg-surface-subtle active:scale-[0.98]"
+      >
+        <span className="text-t2">🔁</span>
+        <span className="flex-1">
+          <span className="block text-t7 font-semibold text-primary">오늘의 복습</span>
+          <span className="mt-0.5 block text-t5 font-bold">
+            {dueCount === null ? "반복해서 풀수록 오래 남아요" : dueCount > 0 ? `복습할 문제 ${dueCount}개` : "오늘 복습 끝 · 새 문제 풀기"}
+          </span>
+        </span>
+        <span className="text-fg-tertiary">→</span>
+      </Link>
 
       {card && (
         <Link

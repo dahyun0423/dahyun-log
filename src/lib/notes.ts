@@ -27,7 +27,7 @@ type Sql = ReturnType<typeof postgres>;
  * 연결을 계속 들고 있으면 "죽은 연결"에 쿼리를 보내고 답을 영원히 기다리게 된다 → 그래서 매번 새로.
  * (Supabase Transaction pooler 주소는 prepared statement를 못 써서 prepare: false)
  */
-async function withDb<T>(work: (sql: Sql) => Promise<T>): Promise<T> {
+export async function withDb<T>(work: (sql: Sql) => Promise<T>): Promise<T> {
   const sql = postgres(process.env.DATABASE_URL!, {
     prepare: false,
     ssl: "require",
@@ -65,6 +65,16 @@ async function ensureTable(sql: Sql) {
     )`;
   // 처음엔 없던 칸이라 나중에 추가 (이미 있으면 건너뜀)
   await sql`ALTER TABLE notes ADD COLUMN IF NOT EXISTS folder_id TEXT`;
+  // 퀴즈 복습 기록 — 문제마다 상자 번호와 다음 복습 날짜
+  await sql`
+    CREATE TABLE IF NOT EXISTS quiz_progress (
+      id         TEXT PRIMARY KEY,
+      box        INT NOT NULL DEFAULT 1,
+      due_at     TIMESTAMPTZ NOT NULL,
+      correct    INT NOT NULL DEFAULT 0,
+      wrong      INT NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
   tableReady = true;
 }
 

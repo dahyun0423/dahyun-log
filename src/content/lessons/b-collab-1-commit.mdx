@@ -10,6 +10,10 @@ export const meta = {
   minutes: 10,
   goals: ["변경을 성격별로 나눠 커밋한다", "컨벤션대로 메시지를 쓴다", "커밋 후 log로 확인한다"],
   questions: ["git add . 대신 경로를 지정하는 이유", "내 커밋 메시지 규칙(이모지·타입) 중 자주 쓸 것 3개", "커밋이 제대로 들어갔는지 확인하는 명령"],
+  quiz: [
+    { q: "git add . 대신 경로를 지정하는 이유는?", choices: ["더 빨라서", "이번 이야기에 해당하는 파일만 담으려고", "필수 문법이라서", "GitHub가 요구해서"], answer: 1, why: "커밋 하나 = 이야기 하나." },
+    { q: "커밋이 다 들어갔는지 확인하는 명령 조합은?", choices: ["git status · git log --oneline", "git push만", "git pull", "npm run build"], answer: 0, why: "status가 비고, log에 보이면 끝." },
+  ],
 };
 
 ## 🎬 장면

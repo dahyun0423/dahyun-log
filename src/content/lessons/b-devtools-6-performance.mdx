@@ -15,6 +15,11 @@ export const meta = {
     "Lighthouse를 시크릿 창에서 돌리는 이유",
     "이 사이트를 다크모드로 봤을 때 이상한 곳",
   ],
+  quiz: [
+    { q: "버튼을 누른 뒤 화면이 반응하기까지를 재는 지표는?", choices: ["LCP", "INP", "CLS", "TTFB"], answer: 1, why: "Interaction to Next Paint." },
+    { q: "성능을 잴 때 개발용 맥에서 해야 할 설정은?", choices: ["화면 밝기 최대", "CPU를 느리게(Mid-tier mobile 등)", "확장 프로그램 켜기", "Disable JavaScript"], answer: 1, why: "실제 사용자 폰처럼 느리게 놓고 잰다." },
+    { q: "새로고침 없이 다크모드 화면을 보는 방법은?", choices: ["OS 설정 바꾸기", "Rendering 탭의 prefers-color-scheme: dark", "Elements에서 색 바꾸기", "Lighthouse"], answer: 1, why: "⌘⇧P → Show Rendering." },
+  ],
 };
 
 ## 🎬 장면
