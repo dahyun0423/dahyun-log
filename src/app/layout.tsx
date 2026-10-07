@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import Header from "@/components/Header";
+import { Suspense } from "react";
+import Sidebar from "@/components/Sidebar";
+import { getLessons } from "@/lib/lessons";
+import { listNotes, READ_ONLY } from "@/lib/notes";
 import "./globals.css";
 
-// TDS 기본 서체. 가변 폰트 1개로 모든 굵기를 쓴다
+// 기본 서체 Pretendard. 가변 폰트 1개로 모든 굵기를 쓴다
 const pretendard = localFont({
   src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
   variable: "--font-pretendard",
@@ -12,19 +15,22 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "dahyun.log — 개발 공부 기록",
-  description: "당당을 만들면서 서버·인프라·AI·프론트엔드를 하나씩 채워가는 9주 공부 기록",
+  title: "dahyun.log",
+  description: "모르는 것을 하나씩 채워가는 개발 공부 기록",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const lessons = await getLessons();
+  const notes = listNotes();
+
   return (
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans">
-        <Header />
-        <main className="mx-auto w-full max-w-3xl flex-1 px-5 pb-24">{children}</main>
-        <footer className="border-t border-line-subtle py-8 text-center text-t7 text-fg-tertiary">
-          dahyun.log · 2026 SW인재양성 9주 기록
-        </footer>
+      <body className="min-h-full font-sans md:flex">
+        {/* 사이드바는 현재 주소(usePathname)를 써서 Suspense로 감싼다. 빈 자리만 먼저 그림 */}
+        <Suspense fallback={<div className="hidden md:block md:h-screen md:w-64 md:shrink-0 md:bg-surface-subtle" />}>
+          <Sidebar lessons={lessons} notes={notes} readOnly={READ_ONLY} />
+        </Suspense>
+        <main className="min-w-0 flex-1">{children}</main>
       </body>
     </html>
   );

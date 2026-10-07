@@ -1,0 +1,156 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { PartialBlock } from "@blocknote/core";
+import { ko } from "@blocknote/core/locales";
+import { useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView, type Theme } from "@blocknote/mantine";
+import "@blocknote/mantine/style.css";
+
+type Props = {
+  id: string; // 노트 id (레슨 노트면 레슨 slug)
+  lesson: string | null;
+  defaultTitle: string;
+  titleEditable: boolean; // 자유 페이지만 제목 수정 가능
+  questions?: string[]; // 처음 열 때 깔아줄 질문
+  readOnly: boolean;
+};
+
+type Status = "idle" | "saving" | "saved" | "error";
+
+// 에디터 색·폰트를 사이트 디자인 토큰에 맞춤 (CSS 변수라 다크모드도 자동)
+const theme: Theme = {
+  colors: {
+    editor: { text: "var(--fg)", background: "var(--surface)" },
+    menu: { text: "var(--fg)", background: "var(--surface-elevated)" },
+    tooltip: { text: "var(--fg)", background: "var(--surface-subtle)" },
+    hovered: { text: "var(--fg)", background: "var(--surface-subtle)" },
+    selected: { text: "var(--fg-on-primary)", background: "var(--primary)" },
+    disabled: { text: "var(--fg-disabled)", background: "var(--surface-subtle)" },
+    shadow: "var(--line)",
+    border: "var(--line)",
+    sideMenu: "var(--fg-tertiary)",
+  },
+  borderRadius: 12,
+  fontFamily: "var(--font-pretendard), -apple-system, sans-serif",
+};
+
+// 질문마다 "제목 + 빈 줄"을 만들어 노트의 뼈대로 쓴다
+function questionBlocks(questions: string[]): PartialBlock[] {
+  return questions.flatMap((q) => [
+    { type: "heading", props: { level: 3 }, content: q },
+    { type: "paragraph" },
+  ]);
+}
+
+export default function NoteEditor(props: Props) {
+  const [loaded, setLoaded] = useState<{ title: string; blocks: PartialBlock[] } | null>(null);
+
+  // 배열은 렌더마다 새로 만들어질 수 있어서 문자열로 비교
+  const questionsKey = JSON.stringify(props.questions ?? []);
+
+  // 1) 서버에서 노트 불러오기 (없으면 질문 뼈대로 시작)
+  useEffect(() => {
+    fetch(`/api/notes/${props.id}`)
+      .then(async (res) => {
+        if (res.ok) {
+          const note = await res.json();
+          setLoaded({ title: note.title, blocks: note.blocks });
+        } else {
+          setLoaded({ title: props.defaultTitle, blocks: questionBlocks(JSON.parse(questionsKey)) });
+        }
+      })
+      .catch(() => setLoaded({ title: props.defaultTitle, blocks: [] }));
+  }, [props.id, props.defaultTitle, questionsKey]);
+
+  if (!loaded) return <p className="px-6 py-4 text-t6 text-fg-tertiary">노트 불러오는 중…</p>;
+  return <Editor {...props} initialTitle={loaded.title} initialBlocks={loaded.blocks} />;
+}
+
+function Editor({
+  id,
+  lesson,
+  titleEditable,
+  readOnly,
+  initialTitle,
+  initialBlocks,
+}: Props & { initialTitle: string; initialBlocks: PartialBlock[] }) {
+  const router = useRouter();
+  const [title, setTitle] = useState(initialTitle);
+  const [status, setStatus] = useState<Status>("idle");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const editor = useCreateBlockNote({
+    initialContent: initialBlocks.length > 0 ? initialBlocks : undefined,
+    dictionary: ko,
+  });
+
+  // 2) 입력이 멈추고 0.8초 뒤 자동 저장 (debounce)
+  function scheduleSave(nextTitle = title) {
+    if (readOnly) return;
+    clearTimeout(timer.current);
+    setStatus("saving");
+    timer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/notes/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: nextTitle,
+            lesson,
+            blocks: editor.document,
+            markdown: editor.blocksToMarkdownLossy(editor.document),
+          }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        setStatus("saved");
+        if (nextTitle !== initialTitle) router.refresh(); // 사이드바 제목 갱신
+      } catch {
+        setStatus("error");
+      }
+    }, 800);
+  }
+
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-6 pt-5 pb-2 md:px-12">
+        <span className="text-t7 font-semibold text-fg-tertiary">내 노트</span>
+        <SaveStatus status={readOnly ? "readonly" : status} />
+      </div>
+      {titleEditable && (
+        <input
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            scheduleSave(e.target.value);
+          }}
+          placeholder="제목 없음"
+          readOnly={readOnly}
+          className="mx-6 mt-4 mb-2 bg-transparent text-t1 font-bold tracking-[-0.02em] outline-none placeholder:text-fg-disabled md:mx-12"
+        />
+      )}
+      <BlockNoteView
+        editor={editor}
+        editable={!readOnly}
+        theme={{ light: theme, dark: theme }}
+        onChange={() => scheduleSave()}
+        className="flex-1 pb-24"
+      />
+    </div>
+  );
+}
+
+function SaveStatus({ status }: { status: Status | "readonly" }) {
+  const text = {
+    idle: "",
+    saving: "저장 중…",
+    saved: "저장됨",
+    error: "저장 실패 — 서버가 켜져 있나요?",
+    readonly: "읽기 전용",
+  }[status];
+  const color = status === "error" ? "text-error" : "text-fg-tertiary";
+  return <span className={`text-t7 ${color}`}>{text}</span>;
+}

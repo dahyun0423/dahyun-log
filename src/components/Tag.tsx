@@ -3,7 +3,7 @@ type TagProps = {
   tone?: "primary" | "neutral" | "success" | "warning";
 };
 
-// TDS Badge(Weak) — 알약 모양, 12px / 600
+// 배지 — 알약 모양, 12px / 600
 const toneClass = {
   primary: "bg-primary-subtle text-primary-strong",
   neutral: "bg-surface-subtle text-fg-secondary",
