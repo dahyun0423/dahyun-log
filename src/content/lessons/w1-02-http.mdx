@@ -1,0 +1,86 @@
+export const meta = {
+  title: "API 요청 하나가 서버까지 가는 길",
+  week: 1,
+  order: 2,
+  category: "server",
+  summary: "HTTP 요청·응답의 생김새와 REST, 상태 코드",
+  questions: [
+    "HTTP 요청은 어떤 4부분으로 되어 있나?",
+    "GET·POST·PUT·DELETE를 내 노트 API로 예를 들면?",
+    "400, 401, 403, 404, 500은 각각 언제 쓰나?",
+    "당당 API 하나를 골라 요청과 응답을 직접 그려보기",
+  ],
+};
+
+## 한 줄로
+
+**HTTP는 "이 주소에, 이 방법으로, 이걸 해줘"라는 정해진 형식의 편지다.** 서버는 같은 형식으로 답장한다.
+
+## 요청의 생김새
+
+```http
+PUT /api/notes/w1-02-http HTTP/1.1      ← 메서드 + 경로
+Host: localhost:3123                     ← 헤더 (부가 정보)
+Content-Type: application/json           ← "본문은 JSON이야"
+
+{"title": "...", "blocks": [...]}        ← 본문(body)
+```
+
+- **메서드**: 무엇을 할지 (GET 읽기, POST 만들기, PUT 통째로 바꾸기, PATCH 일부 바꾸기, DELETE 지우기)
+- **경로**: 무엇에 대해 (`/api/notes/w1-02-http` = 노트 중 w1-02-http)
+- **헤더**: 형식, 인증 토큰, 쿠키 같은 부가 정보
+- **본문**: 실제 데이터 (GET에는 보통 없다)
+
+## 응답의 생김새
+
+```http
+HTTP/1.1 200 OK                          ← 상태 코드
+Content-Type: application/json
+
+{"updatedAt": "2026-10-08T12:00:00.000Z"}
+```
+
+| 코드 | 뜻 | 이 사이트에서 |
+|---|---|---|
+| 200 | 성공 | 노트 읽기·저장 성공 |
+| 201 | 새로 만들었음 | ＋ 새 페이지 |
+| 400 | 요청이 이상함 | id에 대문자나 `/`가 들어감 |
+| 401 | 누군지 모름 (로그인 필요) | 당당의 로그인 안 한 요청 |
+| 403 | 누군지는 알지만 권한 없음 | 배포 사이트에서 저장 시도 |
+| 404 | 없음 | 아직 안 쓴 노트 |
+| 500 | 서버가 터짐 | 서버 코드 버그 |
+
+**4xx는 요청한 쪽 잘못, 5xx는 서버 잘못**으로 기억하면 된다.
+
+## REST는 주소 짓는 규칙
+
+주소에는 **명사(자원)**, 행동은 **메서드**로 표현한다.
+
+- 좋음: `PUT /api/notes/abc`
+- 나쁨: `POST /api/saveNote?id=abc`
+
+당당 계획서의 API도 이 규칙을 따른다. 예: `POST /visits/{id}/reports` = "이 진료(visit)에 리포트를 새로 만든다".
+
+## 직접 해보기 (터미널)
+
+사이트가 켜진 상태(`npm run dev -- -p 3123`)에서:
+
+```bash
+# 1) 읽기 — 응답 헤더까지 보려면 -i
+curl -i localhost:3123/api/notes/w1-02-http
+
+# 2) 잘못된 id → 몇 번이 나올까?
+curl -i localhost:3123/api/notes/ABC
+
+# 3) 저장하기 (PUT) — 저장 후 이 페이지를 새로고침해 보기
+curl -i -X PUT localhost:3123/api/notes/curl-test \
+  -H "Content-Type: application/json" \
+  -d '{"title":"curl로 만든 노트","lesson":null,"blocks":[],"markdown":"hello"}'
+```
+
+3번을 하면 사이드바 "내 페이지"에 노트가 생긴다. 확인했으면 `notes/curl-test.*` 파일을 지운다.
+
+## 더 읽을 것
+
+- [MDN — HTTP 개요](https://developer.mozilla.org/ko/docs/Web/HTTP/Overview)
+- [MDN — HTTP 상태 코드](https://developer.mozilla.org/ko/docs/Web/HTTP/Status)

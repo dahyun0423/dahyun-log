@@ -1,0 +1,62 @@
+export const meta = {
+  title: "이 사이트는 어떻게 돌아갈까",
+  week: 1,
+  order: 1,
+  category: "frontend",
+  summary: "Next.js·Tailwind·MDX를 Spring에 빗대서 이해하기",
+  questions: [
+    "Next.js를 Spring에 빗대어 한 문장으로 설명하면?",
+    "노트에 글자를 치면 파일에 저장되기까지 어떤 순서로 일어나나?",
+    "bg-primary 클래스는 어디서 색을 가져오나?",
+  ],
+};
+
+## 한 줄로
+
+**Next.js는 "React용 Spring"이다.** 폴더 구조가 곧 주소이고, 같은 프로젝트 안에 화면과 API를 같이 둘 수 있다.
+
+## 단어 정리
+
+| 단어 | 뭐냐면 | 아는 것에 빗대면 |
+|---|---|---|
+| React | 화면을 부품(컴포넌트) 단위로 만드는 도구 | JSP include에 값을 넘겨 재사용 |
+| TypeScript | JavaScript + 타입 | Java처럼 변수에 타입을 붙인다 |
+| Next.js | React로 웹사이트를 만드는 프레임워크 | Spring Boot |
+| Tailwind | CSS를 클래스 이름으로 쓰는 방식 | `.card{padding:16px}` 대신 `className="p-4"` |
+| MDX | 마크다운 + React 부품 | 노션 문법으로 쓰는 문서 |
+
+## 폴더가 곧 주소
+
+| 파일 | 주소 | Spring으로 치면 |
+|---|---|---|
+| `src/app/page.tsx` | `/` | `@GetMapping("/")` |
+| `src/app/learn/[slug]/page.tsx` | `/learn/w1-01-this-site` | `@GetMapping("/learn/{slug}")` |
+| `src/app/api/notes/[id]/route.ts` | `/api/notes/w1-01-this-site` | `@RestController`의 GET·PUT |
+
+`[slug]`의 대괄호는 "이 자리는 바뀌는 값"이라는 뜻이다. `@PathVariable`과 같다.
+
+## 노트가 저장되는 순서
+
+1. 오른쪽 에디터에 글자를 친다 (`NoteEditor.tsx`)
+2. 0.8초 동안 입력이 없으면 브라우저가 `PUT /api/notes/w1-01-this-site` 요청을 보낸다
+3. 서버의 `route.ts`가 요청을 받아 id를 검사하고
+4. `notes/w1-01-this-site.json`과 `.md` 파일에 쓴다
+5. 응답이 오면 "저장됨"이 뜬다
+
+이게 **클라이언트 → API → 저장소**라는, 당당에서도 똑같이 쓰는 흐름이다. 당당은 저장소가 파일이 아니라 PostgreSQL일 뿐이다.
+
+## 색은 어디서 오나
+
+`src/app/globals.css`에 세 층이 있다.
+
+1. **원색**: `--blue-500: #3182f6` 같은 팔레트
+2. **용도별 이름**: `--primary: var(--blue-500)` — "주요 버튼 색"
+3. **Tailwind 연결**: `--color-primary: var(--primary)` → `bg-primary` 클래스가 생긴다
+
+Figma에서 Primitive와 Semantic 변수를 나눈 것과 같은 구조다.
+
+## 직접 해보기
+
+1. `globals.css`에서 `--primary: var(--blue-500);`를 `var(--red-500)`으로 바꿔 저장하고 화면을 본다. 확인했으면 되돌린다.
+2. 이 노트에 아무거나 쓰고, VS Code에서 `notes/w1-01-this-site.json`을 열어 본다.
+3. `src/app/api/notes/[id]/route.ts`를 열어서 `isValidId`가 왜 필요한지 주석을 읽어 본다.

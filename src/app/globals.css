@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * 디자인 토큰 — ~/toss-design-system/TOSS_DESIGN.md (TDS) 기준
+ * 디자인 토큰
  *
  * 1) Primitive : 원색 팔레트 (grey/blue/... 50~900). 화면에서 직접 쓰지 않는다.
  * 2) Semantic  : "무엇에 쓰는 색인가" 이름. 라이트/다크에서 값만 바뀐다.
@@ -163,7 +163,7 @@
 }
 
 @theme {
-  /* 타이포: TDS Typography 1~7 → text-t1 ~ text-t7 */
+  /* 타이포: text-t1(가장 큼) ~ text-t7(가장 작음) */
   --text-t1: 30px;
   --text-t1--line-height: 40px;
   --text-t2: 26px;
@@ -191,14 +191,14 @@
   --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.1);
 
   /* 모션 */
-  --ease-toss: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ---------- Base ---------- */
 body {
   background: var(--surface);
   color: var(--fg);
-  font-weight: 500; /* TDS: 한국어 본문은 500 이상 */
+  font-weight: 500; /* 한국어 본문은 500 이상 */
   letter-spacing: -0.01em;
   word-break: keep-all;
 }

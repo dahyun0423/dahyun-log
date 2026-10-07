@@ -1,6 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 
-// MDX 본문 요소에 TDS 스타일 입히기 (h1 = 글 제목은 페이지에서 따로 그림)
+// MDX 본문 요소에 디자인 토큰 스타일 입히기 (h1 = 글 제목은 페이지에서 따로 그림)
 const components: MDXComponents = {
   h2: (props) => <h2 className="mt-12 mb-3 text-t3 font-bold" {...props} />,
   h3: (props) => <h3 className="mt-8 mb-2 text-t4 font-bold" {...props} />,
