@@ -1,0 +1,85 @@
+export const meta = {
+  title: "이 사이트는 어떻게 돌아갈까",
+  week: 1,
+  order: 3,
+  category: "frontend",
+  summary: "Next.js·React·TypeScript·Tailwind를 Spring에 빗대서",
+  minutes: 25,
+  goals: [
+    "Next.js·React·TypeScript·Tailwind·MDX가 각각 뭔지 한 줄로 말한다",
+    "주소를 보고 어떤 파일이 열리는지 찾아간다",
+    "색이 어디서 오는지(디자인 토큰 3층) 설명한다",
+  ],
+  questions: [
+    "Next.js를 Spring에 빗대어 한 문장으로 설명하면?",
+    "/learn/w1-03-this-site 주소를 열면 어떤 파일이 실행되나?",
+    "bg-primary 클래스는 어디서 색을 가져오나?",
+  ],
+};
+
+## 낯선 단어 다섯 개
+
+PR에 "Next.js + Tailwind + MDX"라고 적혀 있었죠. 하나씩 이미 아는 것에 붙여 볼게요.
+
+<Analogy
+  pairs={[
+    { from: "Spring Boot", to: "Next.js", desc: "웹사이트를 만들 때 틀과 규칙을 주는 프레임워크. 홀과 작은 주방을 한 건물에 같이 둘 수 있어요." },
+    { from: "JSP include", to: "React", desc: "화면을 부품(컴포넌트)으로 쪼개서 재사용해요. 사이드바, 태그, 시뮬레이터가 다 부품이에요." },
+    { from: "Java의 타입", to: "TypeScript", desc: "JavaScript에 타입을 붙인 것. 실수를 실행 전에 잡아줘요." },
+    { from: "CSS 파일", to: "Tailwind", desc: ".card { padding:16px } 대신 className=\"p-4\" 처럼 클래스 이름으로 스타일을 줘요." },
+    { from: "노션 문서", to: "MDX", desc: "마크다운으로 쓰는 문서 + React 부품. 지금 이 레슨이 MDX 파일이에요." },
+  ]}
+/>
+
+## 폴더가 곧 주소예요
+
+Spring에서는 `@GetMapping("/learn/{slug}")`처럼 주소를 코드에 적었죠. Next.js는 **폴더 이름**이 주소가 돼요.
+
+| 파일 | 열리는 주소 | Spring으로 치면 |
+|---|---|---|
+| `src/app/page.tsx` | `/` | `@GetMapping("/")` |
+| `src/app/learn/[slug]/page.tsx` | `/learn/아무거나` | `@GetMapping("/learn/{slug}")` |
+| `src/app/api/notes/[id]/route.ts` | `/api/notes/아무거나` | `@RestController`의 GET·PUT |
+
+<Callout type="핵심">`[slug]`의 대괄호는 "이 자리는 바뀌는 값"이라는 뜻이에요. Spring의 `@PathVariable`과 같아요.</Callout>
+
+## 주소를 열면 생기는 일
+
+<FlowSim
+  title="이 레슨 페이지가 열리기까지"
+  startLabel="주소 열기"
+  nodes={[
+    { id: "browser", label: "브라우저", sub: "주소창" },
+    { id: "router", label: "Next.js", sub: "폴더 찾기" },
+    { id: "page", label: "page.tsx", sub: "화면 조립" },
+    { id: "mdx", label: "레슨 파일", sub: ".mdx" },
+  ]}
+  steps={[
+    { at: "browser", say: "주소창에 이 레슨 주소를 쳐요.", packet: "GET /learn/w1-03-this-site" },
+    { at: "router", say: "Next.js가 폴더를 뒤져요. learn 폴더 → [slug] 폴더 → page.tsx. slug 자리에는 'w1-03-this-site'가 들어가요." },
+    { at: "page", say: "page.tsx가 실행돼요. 'w1-03-this-site라는 레슨 파일을 가져와'" },
+    { at: "mdx", say: "src/content/lessons/w1-03-this-site.mdx 를 읽어요. 제목·목표·질문(meta)과 본문이 들어 있어요." },
+    { at: "page", say: "왼쪽엔 레슨 본문, 오른쪽엔 노트 에디터를 배치해서 화면을 완성해요." },
+    { at: "browser", say: "완성된 화면이 브라우저에 도착해요. 그다음 노트 에디터가 /api/notes 로 내 노트를 따로 불러와요." },
+  ]}
+/>
+
+## 색은 어디서 올까
+
+`src/app/globals.css`에 세 층이 있어요. Figma에서 변수를 Primitive와 Semantic으로 나눈 것과 같은 구조예요.
+
+| 층 | 예시 | 뜻 |
+|---|---|---|
+| 1. 원색 | `--blue-500: #3182f6` | 팔레트. 직접 쓰지 않아요 |
+| 2. 용도 | `--primary: var(--blue-500)` | "주요 버튼 색" |
+| 3. 클래스 연결 | `--color-primary: var(--primary)` | 이제 `bg-primary`를 쓸 수 있어요 |
+
+<Callout type="요약">다크모드는 2층의 값만 바꿔요. 그래서 화면 코드는 하나도 안 고쳐도 색이 전부 바뀌어요.</Callout>
+
+## 직접 해보기
+
+1. `globals.css`에서 `--primary: var(--blue-500);`를 `var(--red-500)`으로 바꾸고 저장해요. 사이트가 전부 빨개지면 성공. **다시 되돌려요.**
+2. 이 노트에 아무거나 쓰고, VS Code에서 `notes/w1-03-this-site.json`을 열어 봐요.
+3. `src/app/api/notes/[id]/route.ts`를 열고 `GET`과 `PUT` 함수를 찾아요. 지난 레슨의 시뮬레이터와 같은 흐름인지 비교해 봐요.
+
+<KeySentence note="처음 보는 기술도 아는 것과 짝지으면 절반은 안다.">Next.js는 폴더가 곧 주소인 React용 Spring이다</KeySentence>

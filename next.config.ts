@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-const withMDX = createMDX({});
+const withMDX = createMDX({
+  options: {
+    // 표·체크박스 같은 GitHub 마크다운 문법 지원 (Turbopack은 문자열로 지정)
+    remarkPlugins: ["remark-gfm"],
+  },
+});
 
 export default withMDX(nextConfig);
