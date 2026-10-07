@@ -6,7 +6,6 @@ import LearnSplit from "@/components/LearnSplit";
 import LazyNoteEditor from "@/components/note/LazyNoteEditor";
 import { categories } from "@/data/categories";
 import { getLesson, getLessons, getLessonSlugs } from "@/lib/lessons";
-import { READ_ONLY } from "@/lib/notes";
 
 export default function LearnPage({ params }: PageProps<"/learn/[slug]">) {
   return (
@@ -79,7 +78,6 @@ async function Learn({ params }: { params: PageProps<"/learn/[slug]">["params"] 
           defaultTitle={lesson.title}
           titleEditable={false}
           questions={lesson.questions}
-          readOnly={READ_ONLY}
         />
       }
     />
