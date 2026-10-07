@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Tag from "@/components/Tag";
 import LearnSplit from "@/components/LearnSplit";
+import LessonQuiz from "@/components/quiz/LessonQuiz";
+import { getQuestionBank } from "@/lib/quiz";
 import LazyNoteEditor from "@/components/note/LazyNoteEditor";
 import { categories } from "@/data/categories";
 import { basicsTopics } from "@/data/basics";
@@ -25,6 +27,12 @@ async function Learn({ params }: { params: PageProps<"/learn/[slug]">["params"] 
     isBasics(lesson) ? isBasics(l) && l.topic === lesson.topic : !isBasics(l),
   );
   const topic = basicsTopics.find((t) => t.slug === lesson.topic);
+  // 이 레슨의 퀴즈: 직접 쓴 문제 + 진단서 문제 + 비유 문제 2개까지
+  const mine = (await getQuestionBank()).filter((q) => q.slug === slug);
+  const quiz = [
+    ...mine.filter((q) => q.kind !== "analogy"),
+    ...mine.filter((q) => q.kind === "analogy").slice(0, 2),
+  ];
   const i = all.findIndex((l) => l.slug === slug);
   const prev = all[i - 1];
   const next = all[i + 1];
@@ -73,6 +81,8 @@ async function Learn({ params }: { params: PageProps<"/learn/[slug]">["params"] 
           <div className="lesson">
             <Content />
           </div>
+
+          <LessonQuiz questions={quiz} />
 
           <nav className="mt-14 grid grid-cols-2 gap-3">
             {prev ? (

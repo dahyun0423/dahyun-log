@@ -10,6 +10,10 @@ export const meta = {
   minutes: 10,
   goals: ["pwd·ls·cd로 위치를 잡는다", "명령 결과(성공·실패)를 읽는다", "Ctrl+C로 멈추고 ↑로 다시 부른다"],
   questions: ["지금 터미널이 어느 폴더에 있는지 확인하는 명령", "명령이 실패했다는 걸 어떻게 알아챌까?", "dev 서버를 끄는 법"],
+  quiz: [
+    { q: "지금 터미널이 어느 폴더에 있는지 보는 명령은?", choices: ["ls", "pwd", "cd", "open"], answer: 1, why: "print working directory." },
+    { q: "실행 중인 dev 서버를 멈추는 키는?", choices: ["Ctrl+C", "⌘Q", "Esc", "Ctrl+Z만"], answer: 0, why: "멈춘 뒤 ↑로 다시 부를 수 있다." },
+  ],
 };
 
 ## 🎬 장면

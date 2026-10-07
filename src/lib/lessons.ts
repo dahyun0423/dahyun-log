@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { basicsTopics, type BasicsTopic } from "@/data/basics";
 import type { CategorySlug } from "@/data/categories";
+import type { QuizItem } from "@/data/quiz";
 
 // 레슨 파일(src/content/lessons/*.mdx) 맨 위의 export const meta = {...}
 export type LessonMeta = {
@@ -16,6 +17,7 @@ export type LessonMeta = {
   minutes: number; // 예상 소요 시간
   goals: string[]; // "이 레슨을 마치면" 목록
   questions: string[]; // 노트 쪽에 미리 깔아줄 질문
+  quiz?: QuizItem[]; // 레슨 끝 확인 퀴즈 (복습 일정에 들어감)
 };
 
 export type Lesson = LessonMeta & { slug: string };

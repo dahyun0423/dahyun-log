@@ -10,6 +10,10 @@ export const meta = {
   minutes: 10,
   goals: ["package.json의 세 덩어리를 읽는다", "npm run 뒤 이름이 어디서 오는지 안다", "node_modules를 git에 안 올리는 이유를 안다"],
   questions: ["npm run dev를 치면 실제로 실행되는 명령은?", "dependencies와 devDependencies의 차이", "node_modules를 지우면 어떻게 되돌리나?"],
+  quiz: [
+    { q: "npm run dev를 치면 실제로 실행되는 것은?", choices: ["npm 자체", "package.json scripts의 dev 줄 명령", "node_modules 전부", "Vercel 배포"], answer: 1, why: "이 사이트에선 next dev." },
+    { q: "node_modules를 git에 올리지 않는 이유는?", choices: ["비밀이라서", "수만 개 파일이고 npm install로 언제든 복구돼서", "Vercel이 싫어해서", "용량이 작아서"], answer: 1, why: "주문서(package.json·lock)만 올린다." },
+  ],
 };
 
 ## 🎬 장면
