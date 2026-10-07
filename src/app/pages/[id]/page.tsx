@@ -18,7 +18,7 @@ async function Page({ params }: { params: PageProps<"/pages/[id]">["params"] }) 
 
   return (
     <div className="mx-auto max-w-3xl">
-      <LazyNoteEditor id={id} lesson={null} defaultTitle="제목 없음" titleEditable />
+      <LazyNoteEditor key={id} id={id} lesson={null} defaultTitle="제목 없음" titleEditable />
     </div>
   );
 }
