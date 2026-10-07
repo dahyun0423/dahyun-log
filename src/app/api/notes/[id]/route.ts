@@ -1,10 +1,12 @@
 import { isLoggedIn, unauthorized } from "@/lib/auth";
-import { isValidId, readNote, writeNote, type Note } from "@/lib/notes";
+import { deleteNote, isValidId, moveNote, readNote, writeNote, type Note } from "@/lib/notes";
 
 /*
  * 노트 API — Spring으로 치면
  *   @GetMapping("/api/notes/{id}")  → GET
- *   @PutMapping("/api/notes/{id}")  → PUT
+ *   @PutMapping("/api/notes/{id}")  → PUT    (내용 저장)
+ *   @PatchMapping("/api/notes/{id}") → PATCH  (다른 폴더로 옮기기)
+ *   @DeleteMapping("/api/notes/{id}") → DELETE
  * 둘 다 로그인한 사람(나)만 가능
  */
 
@@ -35,4 +37,24 @@ export async function PUT(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
     body.markdown ?? "",
   );
   return Response.json({ updatedAt });
+}
+
+// 다른 폴더로 옮기기  { folderId: "f-123" | null }
+export async function PATCH(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
+  if (!isLoggedIn(req)) return unauthorized();
+  const { id } = await ctx.params;
+  const { folderId } = (await req.json()) as { folderId: string | null };
+  if (!isValidId(id) || (folderId !== null && !isValidId(folderId))) {
+    return Response.json({ message: "잘못된 id" }, { status: 400 });
+  }
+  await moveNote(id, folderId);
+  return Response.json({ ok: true });
+}
+
+export async function DELETE(req: Request, ctx: RouteContext<"/api/notes/[id]">) {
+  if (!isLoggedIn(req)) return unauthorized();
+  const { id } = await ctx.params;
+  if (!isValidId(id)) return Response.json({ message: "잘못된 id" }, { status: 400 });
+  await deleteNote(id);
+  return Response.json({ ok: true });
 }

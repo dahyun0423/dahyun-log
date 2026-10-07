@@ -69,7 +69,8 @@ export default function NoteEditor(props: Props) {
 
   if (!loaded) return <p className="px-6 py-4 text-t6 text-fg-tertiary">노트 불러오는 중…</p>;
   if (loaded === "guest") return <LoginPrompt />;
-  return <Editor {...props} initialTitle={loaded.title} initialBlocks={loaded.blocks} />;
+  // key: 노트가 바뀌면 에디터를 새로 만든다 (이전 노트 내용이 다른 노트에 저장되는 사고 방지)
+  return <Editor key={props.id} {...props} initialTitle={loaded.title} initialBlocks={loaded.blocks} />;
 }
 
 function Editor({
@@ -82,42 +83,83 @@ function Editor({
   const [title, setTitle] = useState(initialTitle);
   const [status, setStatus] = useState<Status>("idle");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const fade = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const titleRef = useRef(initialTitle); // 저장할 때 최신 제목
+  const savedTitle = useRef(initialTitle); // 마지막으로 저장된 제목 (사이드바 갱신 판단용)
+  const dirty = useRef(false); // 저장 안 된 변경이 있나
+  const enterPressed = useRef(false); // 방금 Enter를 눌렀나
 
   const editor = useCreateBlockNote({
     initialContent: initialBlocks.length > 0 ? initialBlocks : undefined,
     dictionary: ko,
   });
 
-  // 2) 입력이 멈추고 0.8초 뒤 자동 저장 (debounce)
-  function scheduleSave(nextTitle = title) {
+  // 실제 저장 — 바뀐 게 있을 때만
+  async function save() {
     clearTimeout(timer.current);
+    if (!dirty.current) return;
+    dirty.current = false;
     setStatus("saving");
-    timer.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/notes/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: nextTitle,
-            lesson,
-            blocks: editor.document,
-            markdown: editor.blocksToMarkdownLossy(editor.document),
-          }),
-        });
-        if (res.status === 401) return setStatus("logged-out");
-        if (!res.ok) throw new Error(await res.text());
-        setStatus("saved");
-        if (nextTitle !== initialTitle) notifyNotesChanged(); // 사이드바 제목 갱신
-      } catch {
-        setStatus("error");
+    try {
+      const res = await fetch(`/api/notes/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true, // 페이지를 떠나는 순간에도 요청이 끝까지 가도록
+        body: JSON.stringify({
+          title: titleRef.current,
+          lesson,
+          blocks: editor.document,
+          markdown: editor.blocksToMarkdownLossy(editor.document),
+        }),
+      });
+      if (res.status === 401) return setStatus("logged-out");
+      if (!res.ok) throw new Error(await res.text());
+      setStatus("saved");
+      clearTimeout(fade.current);
+      fade.current = setTimeout(() => setStatus("idle"), 2000); // "✓ 저장됨"은 2초 뒤 사라짐
+      if (titleRef.current !== savedTitle.current) {
+        savedTitle.current = titleRef.current;
+        notifyNotesChanged(); // 사이드바 제목 갱신
       }
-    }, 800);
+    } catch {
+      dirty.current = true; // 실패하면 다음 기회에 다시
+      setStatus("error");
+    }
   }
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  // 내용이 바뀌면: Enter 직후면 바로, 아니면 1.5초 쉬었을 때 저장
+  function changed() {
+    dirty.current = true;
+    clearTimeout(timer.current);
+    const delay = enterPressed.current ? 0 : 1500;
+    enterPressed.current = false;
+    timer.current = setTimeout(save, delay);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    // 한글 조합 중 Enter는 글자 확정용이라 제외
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) enterPressed.current = true;
+    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      e.preventDefault();
+      void save();
+    }
+  }
+
+  // 화면을 떠날 때(다른 레슨으로 이동, 탭 닫기) 남은 변경 저장
+  useEffect(() => {
+    const flush = () => void save();
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+      clearTimeout(fade.current);
+    };
+    // save는 ref만 읽어서 처음 한 번만 연결하면 된다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" onKeyDownCapture={onKeyDown} onBlur={() => void save()}>
       <div className="flex items-center justify-between px-6 pt-5 pb-2 md:px-12">
         <span className="text-t7 font-semibold text-fg-tertiary">내 노트</span>
         <SaveStatus status={status} />
@@ -127,7 +169,15 @@ function Editor({
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
-            scheduleSave(e.target.value);
+            titleRef.current = e.target.value;
+            changed();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              void save();
+              editor.focus(); // 제목 쓰고 Enter → 본문으로
+            }
           }}
           placeholder="제목 없음"
           className="mx-6 mt-4 mb-2 bg-transparent text-t1 font-bold tracking-[-0.02em] outline-none placeholder:text-fg-disabled md:mx-12"
@@ -136,7 +186,7 @@ function Editor({
       <BlockNoteView
         editor={editor}
         theme={{ light: theme, dark: theme }}
-        onChange={() => scheduleSave()}
+        onChange={changed}
         className="flex-1 pb-24"
       />
     </div>
@@ -147,7 +197,7 @@ function SaveStatus({ status }: { status: Status }) {
   const text = {
     idle: "",
     saving: "저장 중…",
-    saved: "저장됨",
+    saved: "✓ 저장됨",
     error: "저장 실패 — 인터넷 연결을 확인해 주세요",
     "logged-out": "로그인이 풀렸어요 — 다시 로그인해 주세요",
   }[status];
