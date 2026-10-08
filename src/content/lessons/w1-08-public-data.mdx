@@ -1,0 +1,147 @@
+export const meta = {
+  title: "공공데이터 API 키 — 신청부터 첫 호출, 그리고 숨기기",
+  week: 1,
+  order: 8,
+  category: "server",
+  born: "골드상 팀은 데이터 수집(ETL)을 서버보다 먼저 시작했다. 당당도 2주차에 식약처 식품영양성분 DB를 적재해야 한다. 그런데 공공데이터포털 키를 받아 본 적도 없고, Encoding 키와 Decoding 키가 왜 두 개인지도 모른다.",
+  summary: "data.go.kr 활용신청, Encoding·Decoding 키 차이, 첫 호출 확인, .env·GitHub Secrets로 숨기기, README 데이터 출처 표",
+  minutes: 30,
+  goals: [
+    "공공데이터포털에서 활용신청하고 인증키를 찾는다",
+    "Encoding 키와 Decoding 키를 언제 쓰는지 구분한다",
+    "키를 .env와 GitHub Secrets에 두고 코드·커밋에는 남기지 않는다",
+  ],
+  questions: [
+    "당당이 쓰는 공공데이터 2개(필수)와 번호",
+    "브라우저 주소창에 직접 붙일 때 쓰는 키는? 라이브러리에 넘길 때는?",
+    "SERVICE_KEY_IS_NOT_REGISTERED_ERROR가 나면 의심할 것 두 가지",
+    ".env.example에는 무엇을 쓰고 무엇을 안 쓰나?",
+  ],
+  quiz: [
+    { q: "requests·RestClient처럼 파라미터를 자동으로 URL 인코딩하는 라이브러리에 넣을 키는?", choices: ["Encoding 키", "Decoding 키", "둘 다 아무거나", "키 없이"], answer: 1, why: "Encoding 키를 넣으면 한 번 더 인코딩돼서(%2B → %252B) 등록되지 않은 키가 된다." },
+    { q: "브라우저 주소창이나 curl URL에 직접 붙여 넣을 때 쓰는 키는?", choices: ["Encoding 키", "Decoding 키", "아무거나", "카카오 키"], answer: 0, why: "주소에 직접 넣을 땐 이미 인코딩된 값이어야 + / = 같은 문자가 안 깨진다." },
+    { q: "공공데이터 활용신청을 1주차에 미리 하는 이유는?", choices: ["무료 기간이 끝나서", "승인·키 동기화에 시간이 걸릴 수 있고, 2주차에 적재를 시작해야 해서", "선착순이라서", "필수 과제라서"], answer: 1, why: "골드상 팀도 데이터부터 시작했다." },
+    { q: ".env.example에 들어갈 것은?", choices: ["실제 키 값", "변수 이름과 설명만(값은 비움)", "비밀번호 힌트", "아무것도 안 둔다"], answer: 1, why: "팀원이 어떤 변수가 필요한지 알게 하는 안내판. 진짜 값은 .env(커밋 안 함)." },
+    { q: "GitHub Actions에서 배포 서버의 .env를 만드는 골드상 팀 방식은?", choices: ["레포에 .env 커밋", "Environment 시크릿 하나에 .env 전체를 넣고 배포 때 서버에 쓴다", "슬랙으로 공유", "코드에 상수로"], answer: 1, why: "printf \"%s\" \"${{ secrets.ENV_DEV }}\" > .env" },
+  ],
+};
+
+## 🎬 장면
+
+당당의 "음식 이름 → 영양 참고값"은 우리가 지어낸 숫자가 아니라 **식약처 공공데이터**에서 온다.
+그래서 서버 코드보다 먼저 **데이터를 받을 수 있는 열쇠(인증키)**가 있어야 한다. 골드상 팀도 저장소를 만든 다음 날 데이터 수집부터 시작했다.
+
+## 🗺 병원으로 치면
+
+<Analogy
+  pairs={[
+    { from: "외부 검사기관 이용 신청", to: "활용신청", desc: "공공데이터포털에 '이 데이터 이렇게 쓰겠습니다'라고 신청한다." },
+    { from: "검사기관 출입증", to: "인증키(서비스키)", desc: "요청마다 같이 보내야 데이터를 준다. 남이 쓰면 우리 한도가 깎인다." },
+    { from: "출입증 원본 / 복사본 양식", to: "Decoding / Encoding 키", desc: "같은 키를 두 가지 모양으로 준다. 어디에 내느냐에 따라 골라 쓴다." },
+    { from: "금고", to: ".env · GitHub Secrets", desc: "출입증은 금고에. 진료 매뉴얼(코드)에는 '금고에서 꺼내라'만 적는다." },
+  ]}
+/>
+
+## 🗺 당당이 쓰는 공공데이터
+
+| 데이터 | 번호 | 형태 | 언제 |
+|---|---|---|---|
+| 식품영양성분DB정보 (식약처) | data.go.kr **15127578** | 오픈API | 필수 · 주 1회 증분 갱신 |
+| 전국통합식품영양성분정보(음식) | data.go.kr **15100070** | 파일 다운로드 | 필수 · 초기 1회 적재(약 1.2만 건) |
+| 병원정보서비스 (심평원) | data.go.kr 15001698 | 오픈API | 선택 · 산후 검사 기관 찾기 |
+| Kakao Local·Maps | developers.kakao.com | API | 선택 · 지도 |
+
+## 🛠 1. 활용신청
+
+1. data.go.kr 로그인 (팀 공용 계정이면 더 좋다)
+2. 검색창에 번호(예: `15127578`) → 데이터 페이지
+3. 오픈API면 **활용신청** 버튼
+   - 활용목적: *웹 사이트 개발* / 상세 기능: "임신성 당뇨 관리 웹앱에서 음식 이름 검색과 영양 참고값 제공"
+   - 라이선스 동의 → 신청
+4. 대부분 **자동승인**. 기관 심사가 있는 데이터는 하루 이틀 걸린다
+5. 파일 데이터(15100070)는 신청 없이 **다운로드** 버튼으로 받는다 → 컬럼을 보고 ERD `food` 테이블에 반영
+
+## 🛠 2. 키 찾기 — 두 개가 나온다
+
+**마이페이지 → 데이터활용 → Open API → 활용신청 현황** → 신청한 API 클릭
+
+```text
+일반 인증키 (Encoding)  abc%2Bdef%2F...%3D%3D   ← 특수문자가 %xx로 바뀐 모양
+일반 인증키 (Decoding)  abc+def/...==            ← 원래 모양
+```
+
+<FlowSim
+  title="Encoding 키를 라이브러리에 넣으면"
+  startLabel="무슨 일이 생기나"
+  nodes={[
+    { id: "key", label: "Encoding 키", sub: "%2B" },
+    { id: "lib", label: "requests", sub: "자동 인코딩" },
+    { id: "api", label: "공공 API", sub: "키 확인" },
+  ]}
+  steps={[
+    { at: "key", say: "Encoding 키에는 이미 + 가 %2B로 바뀌어 있다." },
+    { at: "lib", say: "requests는 params를 받으면 한 번 더 인코딩한다. % 가 %25로 바뀐다.", packet: "%2B → %252B" },
+    { at: "api", say: "서버가 받은 키가 원래 키와 다르다 → 등록되지 않은 키", packet: "SERVICE_KEY_IS_NOT_REGISTERED_ERROR", tone: "error" },
+    { at: "key", say: "해결: 라이브러리에는 Decoding 키. 주소창·curl에 직접 붙일 때만 Encoding 키.", tone: "ok" },
+  ]}
+/>
+
+| 어디에 넣나 | 쓸 키 |
+|---|---|
+| 브라우저 주소창, curl 주소에 직접 이어 붙임 | **Encoding** |
+| Python `requests.get(url, params={...})`, Spring `RestClient` `queryParam` | **Decoding** |
+
+## 🛠 3. 첫 호출로 확인
+
+1. 데이터 페이지의 **요청주소**와 **요청변수**(서비스키 변수 이름 포함)를 확인한다. 데이터마다 다르니 꼭 페이지에서 복사
+2. 페이지의 **미리보기 / 확인** 버튼으로 먼저 한 번 본다
+3. 터미널에서:
+
+```bash
+# 키는 화면에 찍히지 않게 변수로
+read -s DATA_KEY          # Encoding 키 붙여넣고 Enter (화면에 안 보임)
+curl "요청주소?serviceKey=$DATA_KEY&pageNo=1&numOfRows=3&type=json"
+```
+
+- JSON이 오면 성공. 승인 직후에 키 오류가 나면 **1~2시간 뒤 다시** 해 본다(키 동기화)
+- 여전히 오류면 → Encoding/Decoding을 바꿔 넣지 않았는지 확인
+
+## 🛠 4. 숨기기 — 세 군데
+
+| 어디 | 무엇 | 커밋? |
+|---|---|---|
+| `.env` | 진짜 키 값 (내 컴퓨터) | ✗ `.gitignore` |
+| `.env.example` | 변수 이름 + 설명, **값은 비움** | ✓ |
+| GitHub **Settings → Secrets and variables → Actions** | CI·배포에서 쓸 값 | 웹에만 |
+
+```dotenv
+# dangdang-ai/.env.example
+DATA_GO_KR_SERVICE_KEY=      # 공공데이터포털 서비스키 (Decoding)
+DATABASE_URL=postgresql://dangdang:dangdang@localhost:5432/dangdang
+```
+
+- 골드상 팀처럼 배포용은 **Settings → Environments → production → Add secret**에 `ENV_PROD` 하나로 `.env` 전체를 넣어 두면, 배포 때 서버에 그대로 쓸 수 있다
+- 키를 실수로 커밋했으면 커밋을 지워도 늦다(이미 공개됨) → **포털에서 키 재발급**이 먼저 → [비밀번호는 채팅에 쓰지 않는다](/learn/b-habits-2-secrets)
+
+## 🛠 5. README에 데이터 출처 표
+
+골드상 팀 ETL README에서 제일 좋았던 부분. 심사위원이 "공공데이터를 어떻게 썼나"를 한 표로 본다.
+
+```markdown
+| 구분 | 데이터 | 제공 | 번호 | 갱신 |
+|---|---|---|---|---|
+| 오픈API | 식품영양성분DB정보 | 식약처 | data.go.kr/15127578 | 주 1회 |
+| 파일 | 전국통합식품영양성분정보(음식) | 공공데이터포털 | data.go.kr/15100070 | 초기 1회 |
+```
+
+여기에 처리 단계(STEP · 실행 명령 · 일일 한도 · 재실행하면 이어서 되는지), 환경변수 표, 출력 테이블을 덧붙인다.
+
+<Callout type="요약">번호로 검색 → 활용신청 → 마이페이지에서 키 2개 → 라이브러리엔 Decoding, 주소에 직접 붙일 땐 Encoding → curl로 첫 호출 → .env(커밋 X) · .env.example(값 비움) · GitHub Secrets → README 데이터 출처 표</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="SERVICE_KEY_IS_NOT_REGISTERED_ERROR가 난다"
+  cause="라이브러리에 Encoding 키를 넣어 두 번 인코딩됐거나, 승인 직후라 키가 아직 동기화되지 않았다"
+  fix="라이브러리에는 Decoding 키로 바꾸고, 그래도 안 되면 1~2시간 뒤 다시 호출한다"
+/>
