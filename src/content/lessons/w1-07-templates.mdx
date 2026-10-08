@@ -1,0 +1,122 @@
+export const meta = {
+  title: "이슈·PR 템플릿과 README — 틀이 대신 기억한다",
+  week: 1,
+  order: 7,
+  category: "devlog",
+  born: "골드상 팀은 New issue를 누르면 '[Feat]: ' 제목과 feat 라벨이 자동으로 붙고, PR에 'Close #'만 적으면 이슈가 닫혔다. 매번 형식을 기억할 필요가 없게 만든 것이다. 우리도 첫 커밋을 템플릿으로 하기로 했다.",
+  summary: "ISSUE_TEMPLATE·PULL_REQUEST_TEMPLATE 파일 위치와 뜻, Close #로 이슈 닫기, README 구성, 첫 커밋 순서",
+  minutes: 30,
+  goals: [
+    "이슈 템플릿 파일 맨 위(---) 칸이 무슨 일을 하는지 말한다",
+    "PR 본문에 closed #번호를 써서 머지와 함께 이슈를 닫는다",
+    "저장소 첫 커밋들을 컨벤션 순서대로 올린다",
+  ],
+  questions: [
+    "이슈 템플릿 머리말의 title·labels는 각각 무엇을 자동으로 해 주나?",
+    "Org의 .github 저장소에 템플릿을 두면 어떤 저장소에 적용되나?",
+    "PR이 develop에 머지됐는데 이슈가 안 닫혔다. 왜일까?",
+    "골드상 팀 README에서 우리가 더 잘할 수 있는 부분 두 가지",
+  ],
+  quiz: [
+    { q: "이슈 템플릿 머리말의 `labels: feat`은?", choices: ["제목을 바꾼다", "이 템플릿으로 만든 이슈에 feat 라벨을 자동으로 붙인다", "담당자를 정한다", "PR을 만든다"], answer: 1, why: "title은 제목 앞부분, labels는 라벨, assignees는 담당자를 미리 채운다." },
+    { q: "이슈 템플릿 파일의 위치는?", choices: ["루트/ISSUE.md", ".github/ISSUE_TEMPLATE/파일.md", "docs/issue.md", "README 안"], answer: 1, why: "PR 템플릿은 .github/PULL_REQUEST_TEMPLATE.md." },
+    { q: "Org의 `.github` 저장소에 템플릿을 두면?", choices: ["아무 효과 없음", "자기 템플릿이 없는 Org 저장소 전부에 기본값으로 쓰인다", "그 저장소에서만 쓰인다", "비공개 저장소에만"], answer: 1, why: "저장소에 자기 .github/ISSUE_TEMPLATE이 있으면 그게 우선." },
+    { q: "PR 머지와 함께 이슈 #12를 닫는 본문은?", choices: ["issue 12", "closed #12", "#12 done", "fix 12번"], answer: 1, why: "close·closes·closed·fix·fixes·resolve… + #번호. 단, 기본 브랜치로 머지될 때 닫힌다." },
+    { q: "골드상 팀 저장소의 첫 커밋들 순서로 맞는 것은?", choices: ["Feat → Fix → Start", "🎉 Start → 📝 Docs(템플릿) → ➕ Dependency → 🚀 Deploy(CI/CD)", "Deploy부터", "README만"], answer: 1, why: "판(템플릿·의존성·CI)을 먼저 깔고 기능을 올린다." },
+  ],
+};
+
+## 🎬 장면
+
+이슈를 만들 때마다 "제목 형식이 `[Feat]: `였나 `[FEAT]`였나…", PR마다 "체크리스트 뭐 있었지…".
+골드상 팀은 이걸 **사람이 기억하지 않게** 했다. New issue를 누르면 칸이 이미 채워져 있다.
+
+## 🗺 하루 일의 흐름
+
+<FlowSim
+  title="이슈 하나가 닫히기까지"
+  startLabel="흐름 따라가기"
+  nodes={[
+    { id: "issue", label: "이슈", sub: "#12" },
+    { id: "branch", label: "브랜치", sub: "feature/#12-…" },
+    { id: "pr", label: "PR", sub: "→ develop" },
+    { id: "merge", label: "머지", sub: "Squash" },
+  ]}
+  steps={[
+    { at: "issue", say: "New issue → ✨ Feature 템플릿을 고른다. 제목 앞 '[Feat]: '와 feat 라벨이 자동으로 붙는다. 마일스톤(주차)과 담당자를 고른다.", packet: "[Feat]: 식사 시작 측정 알림 예약" },
+    { at: "branch", say: "이슈 번호를 넣어 브랜치를 만든다. # 때문에 따옴표로 감싼다.", packet: "git switch develop && git pull\ngit switch -c \"feature/#12-meal-start\"" },
+    { at: "pr", say: "push 후 PR을 연다. base가 develop인지 먼저 본다. 템플릿이 본문을 채워 주고, 나는 closed #12와 작업 내용만 쓴다.", packet: "✨ [FEAT/#12] 식사 시작 측정 알림 예약" },
+    { at: "merge", say: "승민 언니가 Approve → CI 통과 → Squash and merge. 브랜치는 자동 삭제.", tone: "ok" },
+  ]}
+/>
+
+<Callout type="주의">`closed #12`는 **기본 브랜치**에 머지될 때 이슈를 닫는다. 기본 브랜치를 develop으로 바꿔 두었기 때문에 develop 머지에서 닫힌다. main이 기본이면 develop 머지로는 안 닫힌다.</Callout>
+
+## 🗺 파일은 어디에
+
+```text
+dangdang-gdm/.github            ← Org 공통 (자기 템플릿 없는 저장소 전부에 적용)
+├── profile/README.md           ← Org 첫 화면
+├── ISSUE_TEMPLATE/
+│   ├── ✨-feature.md
+│   ├── 🐛-bug.md
+│   ├── ♻️-refactor.md
+│   ├── 🚀-deploy.md
+│   └── 📝-docs.md
+└── PULL_REQUEST_TEMPLATE.md
+```
+
+템플릿 내용은 옵시디언 `13_당당 초기 세팅 가이드` 3절에 다 있다. 복사해서 쓴다.
+
+## 🗺 템플릿 머리말 읽기
+
+```markdown
+---
+name: "✨ Feature"          ← New issue 화면에 보이는 템플릿 이름
+about: 새로운 기능을 구현합니다  ← 이름 아래 설명
+title: "[Feat]: "           ← 제목 칸에 미리 들어갈 글자
+labels: feat                ← 자동으로 붙는 라벨 (라벨이 먼저 만들어져 있어야 함)
+assignees: ''               ← 담당자 (비워 두고 직접 고름)
+---
+## 📝 구현 기능 설명         ← 여기부터는 본문 칸에 미리 채워짐
+```
+
+- `---` 사이를 **머리말(front matter)**이라고 한다. 이 사이가 틀리면(따옴표, 콜론 뒤 공백) 템플릿 목록에 안 뜬다
+- 웹에서 만들고 싶으면: 저장소 **Settings → General → Features → Issues → Set up templates**
+
+## 🛠 README — 골드상 팀 + 우리가 더할 것
+
+| 골드상 팀 README | 당당이 더하는 것 |
+|---|---|
+| 한 줄 소개 · 키워드 · 기간 | 그대로 |
+| 🏆 수상 내역 | 발표 후 채움 |
+| 💡 해결하려는 문제 · 서비스 개요 (인용문 `>`) | 수치는 계획서 근거 그대로(유병률 12.4%, 산후 검사율 42.9%) |
+| 주요 기능 체크박스 · 핵심 기술 나열 | 그대로 |
+| 발표 슬라이드 이미지만 | **아키텍처 · ERD · 시연 영상 섹션을 따로** |
+| Contributors 표 + 아바타 | 그대로 |
+| shields.io 뱃지 (`style=for-the-badge`) | 그대로 |
+| FE README는 기본 템플릿 | **저장소마다 실행 방법·폴더 구조·환경변수 표** |
+
+## 🛠 저장소 첫 커밋 순서 (be 예시)
+
+| 순서 | 메시지 | 담을 것 |
+|---|---|---|
+| 1 | `🎉 Start: 당당 백엔드 프로젝트 초기 세팅` | Spring Initializr로 만든 뼈대 |
+| 2 | `➕ Dependency/Plugin: Security, JPA, Flyway, Redis, springdoc, Spotless 추가` | `build.gradle` |
+| 3 | `🔧 Settings: application.yml 환경변수 분리, .env.example 추가` | 설정 파일 |
+| 4 | `🔧 Settings: 로컬 docker-compose(postgres+pgvector, redis) 추가` | `docker/` |
+| 5 | `🚀 Deploy: PR CI(spotlessCheck, build, test) 추가` | `.github/workflows/ci.yml` |
+| 6 | `📝 Docs: README 작성` | `README.md` |
+
+- `git add .` 말고 **경로 단위로** 담는다 → [커밋 하나 = 이야기 하나](/learn/b-collab-1-commit)
+- 템플릿은 `.github` 저장소에 `📝 Docs: 이슈 템플릿, PR 템플릿 추가`로 먼저 올린다
+
+<Callout type="요약">템플릿은 `.github` 저장소에 한 번 → 이슈 만들면 제목·라벨 자동 → 브랜치 `feature/#번호-설명` → PR 본문 `closed #번호` → develop(기본 브랜치)에 머지되면 이슈 자동 닫힘</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="New issue를 눌렀는데 템플릿 고르는 화면이 안 나오고 빈 칸만 나온다"
+  cause="파일이 .github/ISSUE_TEMPLATE/이 아닌 곳에 있거나, 머리말(--- 사이) 문법이 틀렸다"
+  fix="경로를 확인하고, name·about 줄의 콜론 뒤 공백과 따옴표를 확인한다. 기본 브랜치에 있어야 적용된다"
+/>
