@@ -1,0 +1,120 @@
+export const meta = {
+  title: "팀 GitHub은 Organization으로 — 골드상 팀처럼 판 깔기",
+  week: 1,
+  order: 5,
+  category: "devlog",
+  born: "헥토 & 서경SW아카데미 골드상 팀(MIL.ZIP) 깃허브를 열어 봤더니 개인 계정이 아니라 팀 Organization이었다. 저장소도 be·fe·etl로 나뉘어 있었다. 우리도 이렇게 해야 하는데, 처음 한 번 만들고 나면 어디서 뭘 눌렀는지 까먹을 것 같았다.",
+  summary: "Organization이 뭔지, 왜 쓰는지, 만들고 초대하고 저장소 4개를 여는 순서",
+  minutes: 30,
+  goals: [
+    "개인 계정 저장소와 Organization 저장소의 차이를 말한다",
+    "Organization을 만들고 팀원을 Owner로 초대한다",
+    "당당 저장소 4개(.github · fe · be · ai)의 역할을 말한다",
+  ],
+  questions: [
+    "개인 계정에 저장소를 만들면 팀 프로젝트에서 뭐가 불편한가?",
+    "`.github` 저장소의 profile/README.md는 어디에 보이나?",
+    "MIL.ZIP 저장소 이름 규칙은? 당당은 어떻게 짓나?",
+    "Owner와 Member의 차이",
+  ],
+  quiz: [
+    { q: "팀 프로젝트 저장소를 개인 계정이 아니라 Organization에 두는 가장 큰 이유는?", choices: ["무료라서", "저장소가 특정 개인 소유가 아니라 팀 소유가 되고, 권한·설정을 팀 단위로 관리할 수 있어서", "속도가 빨라서", "Organization만 PR을 쓸 수 있어서"], answer: 1, why: "개인 계정에 두면 그 사람이 '집주인'이 된다. Org는 팀이 집주인." },
+    { q: "Organization 첫 화면에 팀 소개 README를 띄우려면?", choices: ["아무 저장소의 README.md", "`.github` 공개 저장소의 profile/README.md", "Settings → Description", "위키"], answer: 1, why: "저장소 이름이 정확히 .github이고 공개여야 한다." },
+    { q: "Organization은 어디서 만드나?", choices: ["gh CLI 명령", "GitHub 웹(+ → New organization)", "git init", "VS Code"], answer: 1, why: "Org 생성은 웹에서만 된다. 저장소·라벨부터는 CLI도 가능." },
+    { q: "골드상 팀(MIL.ZIP)의 저장소 구성은?", choices: ["모노레포 1개", "서비스명-be / -fe / -etl로 나눈 멀티레포", "개인 계정 1개", "브랜치로 FE·BE 구분"], answer: 1, why: "milzip-be, milzip-fe, milzip-etl + 프로필용 .github." },
+  ],
+};
+
+## 🎬 장면
+
+골드상 팀 주소 `github.com/mil-zip`를 열면 사람 프로필이 아니라 **팀 간판**이 나온다.
+간판 아래에 서비스 소개, 수상 내역, 팀원, 기술 뱃지가 있고, 그 아래에 저장소가 `milzip-be`, `milzip-fe`, `milzip-etl`로 나란히 있다.
+
+심사위원이 링크 하나만 눌러도 **"아, 이 팀은 이런 서비스를 이렇게 나눠서 만들었구나"**가 한눈에 보인다. 우리도 이걸 만든다.
+
+## 🗺 개인 진료실 vs 병원 법인
+
+<Analogy
+  pairs={[
+    { from: "의사 개인 진료실", to: "개인 계정 저장소", desc: "dahyun0423/dangdang-be. 집주인이 다현이라서 승민 언니는 '손님(collaborator)'으로 들어온다." },
+    { from: "병원 법인", to: "Organization", desc: "dangdang-gdm/dangdang-be. 저장소의 주인이 팀이다. 둘 다 Owner면 둘 다 설정을 바꿀 수 있다." },
+    { from: "병원 정문 안내판", to: ".github/profile/README.md", desc: "Org 첫 화면에 뜨는 소개. 심사위원이 제일 먼저 보는 곳." },
+    { from: "진료과(내과·외과·검사실)", to: "저장소 나누기 fe / be / ai", desc: "하는 일이 다르면 방을 나눈다. 배포·CI도 방마다 따로 돈다." },
+  ]}
+/>
+
+## 🗺 당당 Organization 구성
+
+| 저장소 | 무엇 | MIL.ZIP에서는 |
+|---|---|---|
+| `.github` | Org 첫 화면 README(`profile/README.md`), 공통 이슈·PR 템플릿 | `mil-zip/.github` |
+| `dangdang-fe` | React 19 + Vite + TS PWA | `milzip-fe` |
+| `dangdang-be` | Spring Boot 4.1 API | `milzip-be` |
+| `dangdang-ai` | FastAPI AI 보조 + **공공데이터 적재 스크립트** | `milzip-etl` 역할을 겸함 |
+
+<Callout type="핵심">이름 규칙은 **`서비스명-역할`**. 저장소 목록에서 정렬했을 때 나란히 붙어서 보인다.</Callout>
+
+## 🛠 1. Organization 만들기 (웹)
+
+1. github.com 오른쪽 위 **＋** → **New organization**
+2. 플랜에서 **Free** → *Create a free organization*
+3. 입력
+   - **Organization name**: 정한 이름 (예: `dangdang-gdm`). 주소가 `github.com/이름`이 된다. 소문자·하이픈 추천
+   - **Contact email**: 학교 메일
+   - **This organization belongs to**: *My personal account*
+4. 사람 확인(퍼즐) → 약관 동의 → **Next**
+5. 멤버 추가 화면은 일단 **Skip** 해도 된다 (아래에서 따로 초대)
+
+<Callout type="주의">Organization 이름은 나중에 바꿀 수 있지만, 바꾸면 저장소 주소가 전부 바뀐다. 처음에 승민 언니랑 정하고 만든다.</Callout>
+
+## 🛠 2. 팀원 초대·권한
+
+1. Org 페이지 → **People** 탭 → **Invite member**
+2. 승민 언니 GitHub 아이디 입력 → 역할 **Owner** → *Send invitation*
+3. 언니가 메일이나 github.com/notifications에서 **수락**해야 들어온다
+4. Org **Settings → Member privileges → Base permissions**를 **Write**로
+   - 나중에 들어오는 Member도 저장소에 바로 push·PR할 수 있다
+
+| 역할 | 할 수 있는 것 |
+|---|---|
+| Owner | Org 설정, 저장소 생성·삭제, 멤버 관리 — **두 명 다 Owner** |
+| Member | Base permissions만큼 (Write면 push·PR) |
+
+## 🛠 3. 저장소 4개 만들기
+
+Org 페이지 → **Repositories** → **New repository**
+
+| 칸 | 넣을 것 |
+|---|---|
+| Owner | **Org 이름**으로 되어 있는지 꼭 확인 (개인 계정으로 잡혀 있으면 안 됨) |
+| Repository name | `.github` / `dangdang-fe` / `dangdang-be` / `dangdang-ai` |
+| Visibility | **Public** (무료 Org의 비공개 저장소는 브랜치 보호 규칙을 못 건다) |
+| Add a README file | ✓ 체크 → 바로 clone해서 시작 가능 |
+| .gitignore | fe: `Node` / be: `Gradle` / ai: `Python` / .github: 없음 |
+
+만든 뒤 내 컴퓨터로 받기:
+
+```bash
+cd ~/04_Dev
+git clone https://github.com/dangdang-gdm/dangdang-be.git
+cd dangdang-be
+git remote -v        # origin이 Org 주소인지 확인
+```
+
+## 🛠 4. Org 첫 화면 README
+
+1. `.github` 저장소 → **Add file → Create new file**
+2. 파일 이름 칸에 `profile/README.md` (슬래시를 치면 폴더가 생긴다)
+3. 내용은 옵시디언 `13_당당 초기 세팅 가이드` 5절 틀을 붙여 넣는다
+   - 순서: 한 줄 소개 → 수상 내역 → 해결하려는 문제 → 서비스 개요 → 주요 기능 → 핵심 기술 → 아키텍처·ERD·시연 → 저장소 링크 → 팀원 → 기술 뱃지
+4. 저장 후 `github.com/Org이름`에 들어가서 보이는지 확인
+
+<Callout type="요약">웹에서 Org 만들기 → 언니 Owner 초대 → Base permission Write → 저장소 4개(Public, README 체크) → `.github/profile/README.md`</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="저장소를 만들었는데 주소가 github.com/dahyun0423/dangdang-be로 나온다"
+  cause="New repository 화면의 Owner가 Org가 아니라 내 개인 계정으로 잡혀 있었다"
+  fix="Settings → General 맨 아래 Danger Zone → Transfer ownership으로 Org에 옮긴다. 다음부터는 Owner 칸부터 확인"
+/>

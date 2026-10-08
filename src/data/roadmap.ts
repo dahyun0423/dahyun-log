@@ -8,7 +8,7 @@ export type Week = {
 };
 
 export const roadmap: Week[] = [
-  { week: 1, period: "10.8 – 10.14", theme: "기획 확정 · 환경 구성", server: "HTTP·REST, Docker/Compose로 Spring·FastAPI·Postgres 띄우기", frontend: "디자인 토큰, 홈, MDX 글 1편, Vercel 배포" },
+  { week: 1, period: "10.8 – 10.14", theme: "기획 확정 · 환경 구성", server: "팀 GitHub(Org·규칙·템플릿)·공공데이터 키, HTTP·REST, Docker/Compose로 Spring·FastAPI·Postgres 띄우기", frontend: "디자인 토큰, 홈, MDX 글 1편, Vercel 배포" },
   { week: 2, period: "10.15 – 10.21", theme: "기반 기능", server: "JWT·httpOnly 쿠키, 카카오 OAuth, Flyway 마이그레이션", frontend: "글 목록을 날짜순·카테고리별로" },
   { week: 3, period: "10.22 – 10.28", theme: "기록 · 알림", server: "Redis 예약 큐, Web Push(VAPID), Service Worker", frontend: "카테고리 페이지 /category/[slug]" },
   { week: 4, period: "10.29 – 11.4", theme: "식사 기록 · AI 보조", server: "FastAPI, Structured Output, pgvector 음식명 매칭", frontend: "⌘K 검색 (클라이언트 상태)" },
