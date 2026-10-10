@@ -84,20 +84,32 @@ git switch develop
 
 ## 🛠 3. 브랜치 보호 — Rulesets
 
-**Settings → Rules → Rulesets → New ruleset → New branch ruleset**
+**main·develop에 직접 push 못 하게 막는 단계.** 저장소마다 규칙 **1개**로 main·develop을 같이 묶는다.
+
+1. **Settings** → 왼쪽 *Code and automation* → **Rules → Rulesets**
+2. **New ruleset → New branch ruleset**
+3. **Ruleset Name**: `protect-main-develop`
+4. **Enforcement status**: `Disabled` → **Active** ⚠️ 안 바꾸면 규칙이 안 걸린다
+5. **Bypass list**: 비워 둔다 (여기 넣은 사람은 규칙을 무시할 수 있다)
+6. **Target branches → Add target → Include by pattern** → `main` → *Add inclusion pattern*, 한 번 더 → `develop`
+7. **Branch rules** 체크
 
 | 칸 | 넣을 것 |
 |---|---|
-| Ruleset name | `protect-main` (develop용은 `protect-develop`으로 하나 더) |
-| Enforcement status | **Active** |
-| Target branches | *Add target → Include by pattern* → `main` (또는 `develop`) |
-| ☑ Restrict deletions | 브랜치 삭제 금지 |
-| ☑ Require a pull request before merging | → Required approvals **1** |
-| ☑ Require status checks to pass | CI를 만든 뒤에 켠다 (지금은 고를 체크가 없음) |
-| ☑ Block force pushes | `push -f` 금지 |
+| ☑ Restrict deletions | main·develop 삭제 금지 (기본 켜짐) |
+| ☑ Require a pull request before merging | 펼쳐지면 Required approvals `0` → **1** |
+| ☑ Block force pushes | `push -f` 금지 (기본 켜짐) |
+| ☐ Require status checks to pass | **CI를 만든 뒤에** 켠다. 지금 켜면 고를 체크가 없어서 아무것도 머지가 안 된다 |
 
+8. 맨 아래 **Create** → `dangdang-be`, `dangdang-ai`도 똑같이
+
+**걸고 나면 달라지는 것**
+- main·develop에는 **PR로만** 넣을 수 있다. 웹에서 바로 커밋하는 것도 막힌다
+- PR은 **상대가 Approve해야** 머지된다 (내 PR은 승민 언니가, 언니 PR은 내가)
 - 저장한 뒤 시험: `git push origin main` → **거절되면 성공**
-- Bypass list는 비워 둔다. 정말 급할 때만 Owner가 규칙을 잠깐 끈다
+- 정말 급할 때만 Owner가 Enforcement를 잠깐 Disabled로 바꾼다
+
+<Callout type="핵심">당당은 10/10에 **일단 보류**했다. 초기 세팅 커밋(Start·의존성·설정)을 develop에 편하게 올린 뒤, 본격적으로 기능 PR을 주고받기 시작할 때 건다. 무료 Org라 저장소가 **Public**이어야 강제된다.</Callout>
 
 <Callout type="주의">CI(GitHub Actions)를 만든 다음 **Require status checks**에 체크 이름(예: `Code Style Check`, `Build`)을 추가해야 "CI 통과해야 머지"가 진짜로 걸린다. CI는 한 번 돌아야 목록에 나온다.</Callout>
 
@@ -116,10 +128,12 @@ git switch develop
 | `ai` | `#a371f7` | AI 보조 |
 | `data` | `#fbca04` | 공공데이터 |
 
-저장소 3개에 똑같이. 손으로 하다 지치면 터미널로 (gh 로그인 후):
+<Callout type="핵심">**저장소를 만들기 전에** Org **Settings → Repository → Repository defaults → Repository labels**에 8개를 넣어 두면, 그 뒤 만드는 저장소에 **자동으로** 들어간다. 기본 라벨 9개(`bug`, `enhancement`…)는 겹치거나 안 쓰니 지운다. 당당은 이렇게 해서 저장소 3개에 라벨이 한 번에 생겼다.</Callout>
+
+이미 만든 저장소에 넣을 때는 터미널로 (gh 로그인 후):
 
 ```bash
-gh label create feat -R dangdang-gdm/dangdang-be --color eed745
+gh label create feat -R dangdang-2026/dangdang-be --color eed745
 ```
 
 ## 🛠 5. 마일스톤 — 주차별
