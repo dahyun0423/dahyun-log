@@ -28,7 +28,7 @@ export const meta = {
 
 ## 🎬 장면
 
-"내 컴퓨터에선 되는데?"를 없애는 도구가 Docker다. 내 맥에서 돌린 **똑같은 상자**를 KT Cloud 서버에서도 돌린다.
+"내 컴퓨터에선 되는데?"를 없애는 도구가 Docker다. 내 맥에서 돌린 **똑같은 상자**를 AWS EC2에서도 돌린다. 나중에 다른 클라우드로 옮겨도 그대로다.
 MIL.ZIP 팀도 `docker/` 폴더에 Dockerfile과 compose 파일을 두고 그대로 서버에 보냈다.
 
 ## 🗺 단어 셋
@@ -180,8 +180,7 @@ JWT_SECRET=
 KAKAO_CLIENT_ID=
 KAKAO_CLIENT_SECRET=
 AWS_S3_BUCKET=
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
+AWS_REGION=ap-northeast-2   # 키는 없음: EC2 IAM 역할로 접근
 OPENAI_API_KEY=
 INTERNAL_TOKEN=
 ```
