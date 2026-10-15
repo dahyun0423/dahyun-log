@@ -1,0 +1,111 @@
+export const meta = {
+  title: "회원가입·로그인·마이 — 신분증 확인과 방문증",
+  week: 2,
+  order: 7,
+  category: "server",
+  born: "10/23 멘토링까지 회원가입·로그인·마이를 끝내기로 했다. 내 첫 진짜 백엔드 기능이다. 그런데 JWT, OAuth, 해시… 단어만 알고 흐름은 모른다.",
+  summary: "인증·인가 구분, 비밀번호 해시, Access·Refresh 토큰(httpOnly 쿠키), 카카오 로그인 흐름, 이메일 인증번호, 마이 API, 구현 순서",
+  minutes: 35,
+  goals: [
+    "인증과 인가를 병원 비유로 구분한다",
+    "비밀번호를 왜 해시로 저장하는지 말한다",
+    "Access·Refresh 토큰이 각각 무엇인지 말한다",
+    "카카오 로그인에서 서버가 하는 일을 순서대로 말한다",
+    "10/23까지 만들 API 목록과 순서를 안다",
+  ],
+  questions: [
+    "인증 vs 인가",
+    "password_hash에는 무엇이 들어가나?",
+    "Access 토큰을 짧게 두는 이유",
+    "카카오 인가 코드를 토큰으로 바꾸는 건 누구?",
+    "10/23 목표 API",
+  ],
+  quiz: [
+    { q: "'이 사람이 누구인지 확인'은?", choices: ["인가", "인증(Authentication)", "암호화", "캐시"], answer: 1, why: "인증 = 신분증 확인. 인가 = 이 사람이 이 방(기능)에 들어가도 되는지." },
+    { q: "비밀번호를 DB에 저장하는 방법은?", choices: ["그대로", "BCrypt 같은 해시로 바꿔서", "Base64", "프론트에 저장"], answer: 1, why: "DB가 털려도 원래 비밀번호를 알 수 없게. 로그인 때는 입력값을 같은 방식으로 비교한다." },
+    { q: "Access 토큰을 짧게(예: 수십 분) 두는 이유는?", choices: ["서버가 느려서", "도난당해도 오래 못 쓰게", "용량 때문", "규칙이 없어서"], answer: 1, why: "길게 가는 Refresh는 Redis에 두고 httpOnly 쿠키로만 주고받는다. 401이면 재발급." },
+    { q: "카카오 로그인에서 '인가 코드 → 카카오 토큰' 교환은 어디서?", choices: ["폰 화면(JS)", "Spring 서버", "카카오톡 앱", "DB"], answer: 1, why: "Client Secret이 서버에만 있어야 한다. 서버가 교환하고 kakao_id로 회원을 찾거나 만든다." },
+    { q: "비밀번호 찾기에서 '가입되지 않은 이메일입니다'라고 하지 않는 이유는?", choices: ["귀찮아서", "가입 여부가 노출되면 계정 정보가 새서", "법 때문만", "UI가 복잡해서"], answer: 1, why: "AUTH-06: 가입 여부와 무관하게 같은 안내." },
+  ],
+};
+
+## 🎬 장면
+
+모든 기능의 문 앞에는 "당신 누구세요?"가 있다. 그래서 회원 기능이 첫 기능이다.
+10/23 멘토링에서 **가입 → 로그인 → 마이 화면**이 실제로 돌아가는 걸 보여 주는 게 목표다.
+
+## 🗺 병원으로 치면
+
+<Analogy
+  pairs={[
+    { from: "신분증 확인", to: "인증 (로그인)", desc: "이 사람이 누구인지 확인." },
+    { from: "이 병동 출입 가능?", to: "인가", desc: "확인된 사람이 이 기능을 써도 되는지. 남의 기록은 못 본다." },
+    { from: "금고 속 지문 사본", to: "비밀번호 해시 (BCrypt)", desc: "원본 비밀번호는 아무도 모른다. 들어올 때 같은 방식으로 비교만 한다." },
+    { from: "오늘만 쓰는 방문증", to: "Access 토큰 (짧게)", desc: "요청마다 보여 준다. 잃어버려도 금방 만료." },
+    { from: "방문증 재발급 번호표", to: "Refresh 토큰 (Redis, httpOnly 쿠키)", desc: "방문증이 만료되면 이걸로 새로 받는다. 로그아웃하면 서버에서 지운다." },
+    { from: "다른 병원 진료의뢰서", to: "카카오 로그인 (OAuth)", desc: "카카오가 '이 사람 맞아요'라고 확인해 준다." },
+  ]}
+/>
+
+## 🗺 카카오 로그인 흐름 (AUTH-01)
+
+<FlowSim
+  title="카카오로 시작하기"
+  startLabel="버튼 누르기"
+  nodes={[
+    { id: "fe", label: "폰 화면", sub: "프론트" },
+    { id: "kk", label: "카카오", sub: "로그인·동의" },
+    { id: "be", label: "Spring", sub: "나" },
+    { id: "db", label: "DB·Redis", sub: "" },
+  ]}
+  steps={[
+    { at: "fe", say: "'카카오로 시작하기' → 카카오 로그인 화면으로 이동." },
+    { at: "kk", say: "사용자가 동의하면 우리 주소로 '인가 코드'를 붙여 돌려보낸다.", packet: "code=abc" },
+    { at: "be", say: "프론트가 코드를 Spring에 보낸다. Spring이 비밀키로 카카오에 토큰을 교환하고 사용자 정보를 받는다.", packet: "POST /api/v1/auth/kakao" },
+    { at: "db", say: "kakao_id로 회원을 찾고, 없으면 만든다. 같은 이메일의 이메일 계정이 있으면 자동 병합하지 않고 안내한다(AUTH-05)." },
+    { at: "be", say: "우리 Access·Refresh 토큰을 만들어 httpOnly 쿠키로 내려준다. Refresh는 Redis에 저장.", packet: "Set-Cookie" },
+    { at: "fe", say: "로그인 완료 → 처음이면 약관 동의(A-01)로.", tone: "ok" },
+  ]}
+/>
+
+## 🗺 이메일 가입·인증·로그인 (AUTH-02~04)
+
+| 단계 | 서버가 하는 일 |
+|---|---|
+| 가입 | 이메일 중복 확인, 비밀번호 규칙(8자 이상·영문·숫자), **BCrypt 해시**로 저장 |
+| 인증번호 | 6자리를 만들어 **Redis에 제한시간과 함께** 저장 → 메일 발송. 5회 틀리면 다시 받기, 재발송 하루 5번 |
+| 로그인 | 해시 비교. 5회 실패하면 잠시 잠금(남은 횟수 표시) |
+| 비밀번호 찾기 | 가입 여부와 **상관없이 같은 안내**. 링크 30분·1회용 |
+
+## 🗺 마이 (MY) — 10/23까지
+
+| 화면 | API | 메모 |
+|---|---|---|
+| 내 정보 M-02 | `GET/PATCH /me/profile` | 출산예정일·진단일. 주수는 계산값 |
+| 병원 기준·관리 모드 M-03 | `PATCH /me/care-mode` · `PATCH /me/contact-note` | 식이 단독 / 인슐린 함께 |
+| 비밀번호 바꾸기 M-09 | `PATCH /me/password` | **현재 비밀번호 확인** 먼저, 이메일 가입자만 |
+| 로그아웃 M-10 | `POST /auth/logout` | Redis의 Refresh 삭제 |
+| 탈퇴 M-07·08 | `DELETE /me` | 개인 데이터 즉시 삭제 (가능하면 이번 주) |
+
+## 🛠 구현 순서 (추천)
+
+1. `users` · `consents` 테이블 → Flyway `V1__init.sql` (ERD 확정본)
+2. `POST /auth/signup` + BCrypt → 테스트 먼저(비밀번호 규칙, 중복 이메일)
+3. `POST /auth/login` → `JwtProvider`(Access·Refresh) → httpOnly 쿠키
+4. `JwtAuthenticationFilter` + `SecurityConfig` → `GET /me` 200 확인
+5. `POST /auth/refresh` · `POST /auth/logout` (Redis)
+6. 이메일 인증번호 (Redis 제한시간)
+7. 카카오 `POST /auth/kakao`
+8. 마이 API → Swagger 캡처 → 멘토링
+
+<Callout type="주의">Boot 4 + jjwt·springdoc 버전 호환을 먼저 확인한다(ADR-0001). 블로그의 Boot 3 예제를 그대로 복사하면 패키지 이름이 달라 안 돈다.</Callout>
+
+<Callout type="요약">인증=신분증, 인가=출입 권한. 비밀번호는 BCrypt 해시. Access(짧게)+Refresh(Redis) httpOnly 쿠키. 카카오 코드 교환은 서버. 순서: V1 → 가입 → 로그인·JWT → 필터·/me → refresh·logout → 인증번호 → 카카오 → 마이.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="로그인은 되는데 30분쯤 지나면 모든 API가 401이 난다"
+  cause="Access 토큰이 만료됐는데 Refresh로 재발급하는 흐름이 없다"
+  fix="POST /auth/refresh를 만들고, 프론트는 401을 받으면 재발급 후 원래 요청을 다시 보낸다(재발급 대기열)"
+/>
