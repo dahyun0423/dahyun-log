@@ -1,0 +1,125 @@
+export const meta = {
+  title: "Spring 프로젝트 해부 — 언니가 만든 파일, 하나씩 뭐야?",
+  week: 2,
+  order: 2,
+  category: "server",
+  born: "dangdang-be를 열었더니 build.gradle, gradlew, settings.gradle… 파일이 잔뜩 있다. 언니가 만든 거라 손대기 무섭고, 뭐가 뭔지 모른다. 게다가 DB가 MySQL로 들어가 있었다.",
+  summary: "Spring Boot 프로젝트 파일의 역할, 일부러 실패시켜 보는 첫 실행, MySQL → PostgreSQL, 다음에 넣을 도구 순서",
+  minutes: 25,
+  goals: [
+    "build.gradle · gradlew · application.yaml · ...Application.java의 역할을 말한다",
+    "./gradlew bootRun으로 서버를 켜고, DataSource 에러의 뜻을 설명한다",
+    "왜 MySQL이 아니라 PostgreSQL이어야 하는지 말한다",
+  ],
+  questions: [
+    "build.gradle을 병원으로 비유하면?",
+    "Gradle을 설치 안 했는데 어떻게 빌드가 되지?",
+    "Failed to configure a DataSource는 무슨 뜻?",
+    "다음에 넣을 의존성 순서",
+  ],
+  quiz: [
+    { q: "쓸 라이브러리를 적어 두는 '장보기 목록'은?", choices: ["settings.gradle", "build.gradle", "application.yaml", "gradlew"], answer: 1, why: "dependencies 블록에 한 줄 넣으면 Gradle이 받아 온다." },
+    { q: "컴퓨터에 Gradle을 안 깔았는데 빌드할 수 있는 이유는?", choices: ["IntelliJ가 대신 해서", "gradlew(Gradle Wrapper)가 맞는 버전을 받아서 실행해서", "Java에 내장돼서", "못 한다"], answer: 1, why: "팀원 모두 같은 Gradle 버전을 쓰게 해 주는 실행기다. ./gradlew bootRun" },
+    { q: "DB 주소를 안 적고 켰을 때 'Failed to configure a DataSource'가 나는 이유는?", choices: ["Java 버전이 낮아서", "DB 드라이버(출입증)는 있는데 DB 주소(차트실 위치)를 안 알려 줘서", "인터넷이 끊겨서", "코드에 오타가 있어서"], answer: 1, why: "data-jpa와 드라이버가 있으면 Spring은 DB에 붙으려 한다. application.yaml에 url을 적거나 DB를 띄워야 한다." },
+    { q: "당당 be가 MySQL이 아니라 PostgreSQL이어야 하는 이유는?", choices: ["무료라서", "AI 음식 이름 매칭에 pgvector(벡터 검색)를 써야 해서", "MySQL은 Java를 못 써서", "언니가 싫어해서"], answer: 1, why: "기술 스택에서 PostgreSQL 16 + pgvector + pg_trgm으로 정했다." },
+    { q: "application.yaml의 역할은?", choices: ["장보기 목록", "설정표(DB 주소, 포트 등)", "테스트 코드", "전원 버튼"], answer: 1, why: "코드를 안 바꾸고 환경마다 값만 바꾼다. 비밀값은 환경변수로 빼낸다." },
+  ],
+};
+
+## 🎬 장면
+
+언니가 10/12에 `🎉 Start: Spring Boot 프로젝트 초기 생성`을 올려 뒀다. 고마운데, 열어 보니 모르는 파일투성이다.
+하나씩 이름표를 붙여 보자.
+
+## 🗺 파일 이름표
+
+<Analogy
+  pairs={[
+    { from: "장보기 목록", to: "build.gradle", desc: "쓸 라이브러리. 지금: data-jpa, validation, webmvc, lombok, devtools, mysql-connector-j" },
+    { from: "모두 같은 마트 카드", to: "gradlew", desc: "Gradle을 설치 안 해도 팀원 모두 같은 버전으로 빌드한다." },
+    { from: "병원 이름표", to: "settings.gradle", desc: "프로젝트 이름(dangdang-be)." },
+    { from: "전원 버튼", to: "DangdangBeApplication.java", desc: "main 메서드. 여기서 서버가 켜진다." },
+    { from: "운영 설정표", to: "application.yaml", desc: "DB 주소, 포트, 로그 수준." },
+  ]}
+/>
+
+```text
+dangdang-be/
+├── build.gradle            ← 장보기 목록
+├── settings.gradle         ← 이름표
+├── gradlew  gradle/        ← 같은 버전 Gradle
+└── src/
+    ├── main/java/com/dangdang/DangdangBeApplication.java   ← 전원
+    ├── main/resources/application.yaml                     ← 설정표
+    └── test/java/com/dangdang/DangdangBeApplicationTests.java
+```
+
+<Callout type="주의">`build.gradle`에 **MySQL** 드라이버가 들어가 있다. 계획은 **PostgreSQL + pgvector**(AI 음식 매칭용). Initializr에서 기본으로 골라진 것 같다 → 언니에게 확인하고 `runtimeOnly 'org.postgresql:postgresql'`로 바꾼다.</Callout>
+
+## 🛠 1. 가져오기
+
+```bash
+mkdir -p ~/04_Dev/dangdang && cd ~/04_Dev/dangdang
+git clone https://github.com/dangdang-2026/dangdang-be.git
+cd dangdang-be
+java -version    # 21이 나오면 OK
+```
+
+IntelliJ → Open → `dangdang-be` 폴더. 오른쪽 아래 Gradle 동기화가 끝날 때까지 기다린다.
+
+## 🛠 2. 일부러 실패시켜 보기
+
+```bash
+./gradlew bootRun
+```
+
+아마 이런 에러가 난다:
+
+```text
+Failed to configure a DataSource: 'url' attribute is not specified
+and no embedded datasource could be configured.
+```
+
+<FlowSim
+  title="왜 실패하나"
+  startLabel="bootRun"
+  nodes={[
+    { id: "app", label: "Spring", sub: "켜지는 중" },
+    { id: "jpa", label: "data-jpa", sub: "DB 쓸게요" },
+    { id: "yaml", label: "application.yaml", sub: "주소?" },
+  ]}
+  steps={[
+    { at: "app", say: "장보기 목록에 data-jpa와 DB 드라이버가 있다 → 'DB에 붙어야겠다'" },
+    { at: "jpa", say: "DB 연결(DataSource)을 만들려고 한다.", packet: "url?" },
+    { at: "yaml", say: "설정표에 DB 주소가 없다.", tone: "error", packet: "url 없음" },
+    { at: "app", say: "해결: docker-compose로 DB를 띄우고 application.yaml에 주소를 적는다.", tone: "ok" },
+  ]}
+/>
+
+에러를 직접 한 번 보는 게 공부다. **출입증(드라이버)은 챙겼는데 차트실 위치(url)를 안 알려 준 것.**
+
+## 🛠 3. 다음에 넣을 도구 (하나씩, 이해하면서)
+
+| 도구 | 비유 | 언제 | 커밋 |
+|---|---|---|---|
+| PostgreSQL 드라이버 | 차트실 출입증 | 지금 | ➕ Dependency/Plugin |
+| docker-compose (postgres+pgvector, redis) | 차트실·호출벨 설치 | 지금 | 🔧 Settings |
+| Actuator | 맥박 체크 `/actuator/health` | 지금 | ➕ |
+| springdoc (Swagger) | 신청서 견본집 | 이번 주 | ➕ |
+| Flyway | 선반 설계도(테이블 변경 기록) | ERD 확정 후 | ➕ · `V1__init.sql` |
+| Security + JWT | 신분증 확인 | 카카오 로그인 | ✨ Feat |
+| Redis | 호출벨 예약 | 알림 | ✨ Feat |
+
+그다음 첫 API: `GET /api/health` → `ok`. 브라우저에서 `localhost:8080/api/health`가 뜨면 **요청 → 서버 → 응답** 한 바퀴를 직접 돌린 거다.
+
+<Callout type="주의">Boot 4는 3.x와 바뀐 게 있다(Jackson 3 `tools.jackson.*`, 일부 starter 이름). 블로그의 3.x 예제를 그대로 복사하지 말고 공식 문서를 먼저 본다.</Callout>
+
+<Callout type="요약">build.gradle=장보기 · gradlew=같은 버전 실행기 · application.yaml=설정표 · Application.java=전원. 첫 실행은 DataSource 에러가 정상 → DB 띄우고 주소 적기. MySQL → PostgreSQL 확인.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="./gradlew bootRun 하자마자 Failed to configure a DataSource"
+  cause="data-jpa와 DB 드라이버가 있어서 Spring이 DB에 붙으려는데, application.yaml에 DB 주소가 없다"
+  fix="docker-compose로 PostgreSQL을 띄우고 spring.datasource.url·username·password를 적는다"
+/>
