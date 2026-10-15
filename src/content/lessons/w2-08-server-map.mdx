@@ -1,0 +1,123 @@
+export const meta = {
+  title: "서버 한 장 — KT Cloud 위에 무엇이 올라가나",
+  week: 2,
+  order: 8,
+  category: "infra",
+  born: "서버는 내 담당인데 서버를 만들어 본 적이 없다. 다음 주 금요일까지 실제 주소로 접속되게 해야 한다. 골드상 MIL.ZIP 팀처럼 KT Cloud에 올리기로 했다.",
+  summary: "VM·Nginx·Docker Compose·컨테이너·방화벽을 건물 비유로, 당당 서버 구성도, KT Cloud에서 할 일 순서, HTTPS가 필요한 이유",
+  minutes: 25,
+  goals: [
+    "VM·Nginx·컨테이너·방화벽을 건물 비유로 설명한다",
+    "당당 서버에 올라가는 컨테이너 5개를 말한다",
+    "밖에 여는 포트 3개와 이유를 말한다",
+    "KT Cloud에서 할 일 순서를 안다",
+  ],
+  questions: [
+    "Nginx는 무슨 일을 하나",
+    "DB 포트를 밖에 열면 왜 안 되나",
+    "HTTPS가 없으면 PWA에 무슨 일이",
+    "손으로 한 번 배포하는 이유",
+  ],
+  quiz: [
+    { q: "Nginx를 건물로 비유하면?", choices: ["창고", "1층 안내데스크(손님을 맞아 맞는 방으로 안내)", "보일러실", "옥상"], answer: 1, why: "443으로 온 요청을 받아 /api는 Spring으로, 나머지는 React 화면 파일로 보낸다. HTTPS 인증서도 여기서." },
+    { q: "당당 서버에서 밖(인터넷)에 여는 포트는?", choices: ["22·80·443", "8080·5432·6379", "전부", "443만"], answer: 0, why: "22는 팀 IP만·키 인증, 80은 443으로 넘기기, 443이 HTTPS. DB(5432)·Redis(6379)·Spring(8080)은 안에서만." },
+    { q: "docker-compose에서 Spring 포트를 '127.0.0.1:8080:8080'으로 쓰는 이유는?", choices: ["빠르게", "서버 자기 자신(Nginx)만 접근하게, 인터넷에서 바로 못 들어오게", "보기 좋게", "규칙"], answer: 1, why: "'8080:8080'이면 모든 곳에 열린다. 다른 팀에서 실제로 그랬다." },
+    { q: "PWA에 HTTPS가 꼭 필요한 이유는?", choices: ["빨라서", "Service Worker·홈 화면 설치·푸시가 HTTPS에서만 동작해서", "SEO", "필수 아님"], answer: 1, why: "개원 허가증. Let's Encrypt(certbot)로 무료 발급." },
+    { q: "CI/CD 자동화 전에 손으로 한 번 배포해 보는 이유는?", choices: ["자동화가 어려워서", "어디서 막히는지 직접 봐야 자동화 스크립트를 고칠 수 있어서", "규칙", "느려서"], answer: 1, why: "손으로 된 명령을 그대로 cd.yml로 옮긴다." },
+  ],
+};
+
+## 🎬 장면
+
+로컬에서 서버가 켜지면 나만 볼 수 있다. 폰으로, 멘토님이, 사용자가 들어오려면 **인터넷에 늘 켜져 있는 컴퓨터**가 필요하다.
+그게 클라우드 서버다. MIL.ZIP 팀처럼 **KT Cloud**에 빌린다.
+
+## 🗺 건물로 치면
+
+<Analogy
+  pairs={[
+    { from: "건물 한 층 임대", to: "VM (KT Cloud Virtual Server, Ubuntu)", desc: "인터넷에 24시간 켜져 있는 내 컴퓨터." },
+    { from: "건물 주소", to: "공인 IP · 도메인", desc: "밖에서 찾아오는 주소. 도메인은 사람이 외우기 쉬운 이름." },
+    { from: "건물 출입문 규칙", to: "방화벽 (22·80·443만)", desc: "열어 둔 문으로만 들어올 수 있다." },
+    { from: "1층 안내데스크", to: "Nginx", desc: "손님(요청)을 맞아 화면 파일을 주거나 /api는 Spring 방으로 안내. HTTPS 인증서도 여기." },
+    { from: "칸막이 진료실들", to: "Docker 컨테이너", desc: "Spring·AI·DB·Redis가 각자 방에서 돈다. 서로 안 엉킨다." },
+    { from: "층 배치도", to: "docker-compose.yml", desc: "어떤 방을 몇 개, 어떻게 연결할지 한 파일에." },
+  ]}
+/>
+
+## 🗺 당당 서버 한 장
+
+```text
+[폰 PWA] ──HTTPS──▶ KT Cloud VM (Ubuntu)
+                     ├─ Nginx : 80→443, Let's Encrypt, React 화면, /api → 127.0.0.1:8080
+                     └─ docker compose
+                         ├─ app    Spring Boot (Java 21)     127.0.0.1:8080
+                         ├─ ai     FastAPI (Python 3.11)     안에서만
+                         ├─ db     PostgreSQL 16 + pgvector  안에서만 (볼륨에 저장)
+                         ├─ redis  Redis 7                   안에서만 (비밀번호)
+                         └─ dozzle 로그 보기                  127.0.0.1:9999 (ssh 터널로만)
+```
+
+<FlowSim
+  title="폰에서 '로그인'을 누르면"
+  startLabel="요청 보내기"
+  nodes={[
+    { id: "fe", label: "폰", sub: "PWA" },
+    { id: "ng", label: "Nginx", sub: "443" },
+    { id: "app", label: "Spring", sub: "8080" },
+    { id: "db", label: "PostgreSQL", sub: "5432" },
+  ]}
+  steps={[
+    { at: "fe", say: "https://도메인/api/v1/auth/login 으로 보낸다.", packet: "HTTPS" },
+    { at: "ng", say: "인증서로 암호를 풀고, /api 로 시작하니 Spring 방으로 안내한다.", packet: "→ 127.0.0.1:8080" },
+    { at: "app", say: "비밀번호 해시를 확인하러 DB에 묻는다." },
+    { at: "db", say: "밖에서는 못 들어오는 방. Spring만 접근한다." },
+    { at: "fe", say: "토큰 쿠키를 받고 로그인 완료.", tone: "ok" },
+  ]}
+/>
+
+<Callout type="주의">DB·Redis·Spring 포트를 인터넷에 열지 않는다. compose에서 `"8080:8080"`이 아니라 **`"127.0.0.1:8080:8080"`**. 다른 팀 레포에서 그대로 열려 있던 사례가 있었다.</Callout>
+
+## 🛠 KT Cloud에서 할 일 (순서)
+
+1. 계정·크레딧 확인 (아카데미 제공 방식은 멘토링 때 확인)
+2. **서버(VM) 만들기**: Ubuntu LTS, 메모리 4GB 이상 권장 (Spring + AI + DB + Redis)
+3. **공인 IP** 연결
+4. **방화벽**: 22(팀 IP만), 80, 443만 허용
+5. ssh 접속 → Docker 설치 → `docker compose version` 확인
+6. **손으로 한 번 배포**: 이미지 받아서 `docker compose up -d` → `http://공인IP/actuator/health`
+7. 도메인 연결 → Nginx → `certbot`으로 HTTPS
+8. 그다음에 자동화(CI/CD)
+
+> 콘솔의 메뉴 이름은 실제 화면을 보면서 캡처와 함께 옵시디언 `08_서버 인프라 가이드`에 적는다.
+
+```bash
+# 5. 서버에서 (Ubuntu)
+sudo apt update && sudo apt install -y docker.io docker-compose-v2 nginx
+sudo usermod -aG docker $USER   # 다시 접속하면 sudo 없이 docker
+sudo timedatectl set-timezone Asia/Seoul
+```
+
+```nginx
+# 7. /etc/nginx/sites-available/dangdang  (certbot이 443 부분을 채워 준다)
+server {
+    server_name 도메인;
+    root /var/www/dangdang;              # React 빌드 결과
+    location / { try_files $uri /index.html; }
+    location /api/ { proxy_pass http://127.0.0.1:8080; proxy_set_header Host $host; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto $scheme; }
+}
+```
+
+```bash
+sudo certbot --nginx -d 도메인   # 무료 HTTPS, 자동 갱신
+```
+
+<Callout type="요약">VM(건물) + 방화벽 22·80·443(출입문) + Nginx(안내데스크·HTTPS) + compose 컨테이너 5개(진료실). 손으로 한 번 → 그다음 자동화.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="서버에서는 curl localhost:8080 이 되는데, 폰에서 도메인으로 들어가면 안 열린다"
+  cause="방화벽에서 80·443이 안 열렸거나, Nginx가 /api를 127.0.0.1:8080으로 넘기지 않는다"
+  fix="KT Cloud 방화벽 규칙과 nginx -t, systemctl status nginx를 확인하고, Nginx 로그(/var/log/nginx/error.log)를 본다"
+/>

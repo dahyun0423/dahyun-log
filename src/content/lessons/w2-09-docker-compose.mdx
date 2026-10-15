@@ -1,0 +1,199 @@
+export const meta = {
+  title: "Docker로 서버 띄우기 — Dockerfile과 docker-compose.yml",
+  week: 2,
+  order: 9,
+  category: "infra",
+  born: "Spring을 켜려면 DB가 있어야 하고, 서버에도 똑같이 올려야 한다. 내 컴퓨터에서 되는 게 서버에서도 똑같이 되게 하려면 Docker를 써야 한다는데, Dockerfile과 compose 파일이 뭐가 다른지 모르겠다.",
+  summary: "이미지·컨테이너·볼륨, Spring 멀티스테이지 Dockerfile(비root·KST), 로컬용·서버용 compose(db·redis·app·ai·dozzle), .env",
+  minutes: 30,
+  goals: [
+    "이미지·컨테이너·볼륨의 차이를 말한다",
+    "Spring Dockerfile을 단계별로 읽는다",
+    "compose로 Postgres·Redis를 띄우고 Spring을 연결한다",
+    "비밀값을 .env로 빼낸다",
+  ],
+  questions: [
+    "이미지 vs 컨테이너",
+    "볼륨이 없으면 무슨 일이",
+    "멀티스테이지를 쓰는 이유",
+    "depends_on + healthcheck는 왜",
+  ],
+  quiz: [
+    { q: "이미지와 컨테이너의 관계는?", choices: ["같은 것", "이미지 = 레시피(설계), 컨테이너 = 그걸로 만든 실제 요리(실행 중)", "컨테이너가 이미지를 만든다", "관계 없음"], answer: 1, why: "같은 이미지로 컨테이너를 여러 개 띄울 수 있다." },
+    { q: "Postgres 컨테이너에 볼륨을 안 붙이면?", choices: ["더 빠르다", "컨테이너를 지우면 데이터도 같이 사라진다", "아무 일 없음", "에러가 난다"], answer: 1, why: "볼륨 = 컨테이너 밖 서랍. 다시 만들어도 기록이 남는다." },
+    { q: "Dockerfile 멀티스테이지(빌드 단계 → 실행 단계)를 쓰는 이유는?", choices: ["멋있어서", "실행 이미지에 JDK·소스 없이 JRE와 jar만 남겨 가볍고 안전하게", "빌드가 빨라져서만", "필수 문법"], answer: 1, why: "빌드 도구는 빌드할 때만 필요하다." },
+    { q: "depends_on에 condition: service_healthy를 쓰는 이유는?", choices: ["순서 상관없음", "DB가 '켜짐'이 아니라 '받을 준비 됨'일 때 Spring을 시작하려고", "속도", "로그"], answer: 1, why: "DB가 뜨는 중에 Spring이 붙으면 연결 실패로 죽는다." },
+  ],
+};
+
+## 🎬 장면
+
+"내 컴퓨터에선 되는데?"를 없애는 도구가 Docker다. 내 맥에서 돌린 **똑같은 상자**를 KT Cloud 서버에서도 돌린다.
+MIL.ZIP 팀도 `docker/` 폴더에 Dockerfile과 compose 파일을 두고 그대로 서버에 보냈다.
+
+## 🗺 단어 셋
+
+<Analogy
+  pairs={[
+    { from: "레시피", to: "이미지 (Dockerfile로 만든다)", desc: "무엇을 깔고 어떻게 실행할지 굳힌 것. Docker Hub에 올려 서버가 받는다." },
+    { from: "레시피로 만든 요리", to: "컨테이너", desc: "이미지를 실제로 실행한 것. 지우고 다시 만들 수 있다." },
+    { from: "냉장고(밖에 따로)", to: "볼륨", desc: "컨테이너를 지워도 남는 저장 공간. DB 데이터는 꼭 여기." },
+    { from: "주방 배치도", to: "docker-compose.yml", desc: "요리 여러 개를 한 번에 띄우고 서로 연결." },
+  ]}
+/>
+
+## 🛠 1. 로컬: DB와 Redis만 띄우기 (Spring은 IntelliJ에서)
+
+`dangdang-be/docker/docker-compose.local.yml`
+
+```yaml
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: dangdang
+      POSTGRES_USER: dangdang
+      POSTGRES_PASSWORD: dangdang      # 로컬 전용 값
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dangdang -d dangdang"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:7
+    ports: ["127.0.0.1:6379:6379"]
+volumes:
+  pgdata:
+```
+
+```bash
+docker compose -f docker/docker-compose.local.yml up -d
+docker compose -f docker/docker-compose.local.yml ps      # db가 healthy인지
+```
+
+`application.yaml` (로컬)
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dangdang
+    username: dangdang
+    password: dangdang
+  data:
+    redis:
+      host: localhost
+      port: 6379
+```
+
+이제 `./gradlew bootRun` → [Spring 프로젝트 해부](/learn/w2-02-spring-project)의 DataSource 에러가 사라진다.
+
+## 🛠 2. Spring 이미지 만들기 — `docker/Dockerfile`
+
+```dockerfile
+# 1단계: 빌드 (JDK)
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /app
+COPY gradlew settings.gradle build.gradle ./
+COPY gradle gradle
+RUN ./gradlew dependencies --no-daemon > /dev/null 2>&1 || true   # 의존성 캐시
+COPY src src
+RUN ./gradlew bootJar -x test --no-daemon
+
+# 2단계: 실행 (JRE만)
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+ENV TZ=Asia/Seoul
+RUN useradd -r -u 1001 app
+COPY --from=build /app/build/libs/*.jar app.jar
+USER app
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+```bash
+docker build -f docker/Dockerfile -t dangdang-be:local .
+```
+
+| 줄 | 왜 |
+|---|---|
+| `AS build` → `COPY --from=build` | 실행 이미지에는 JDK·소스가 없다 → 가볍고 안전 |
+| 의존성 먼저 복사 | 소스만 바뀌면 의존성 다운로드를 다시 안 한다(캐시) |
+| `TZ=Asia/Seoul` | 알림 시각 계산(R7) |
+| `useradd` + `USER app` | root로 실행하지 않는다 |
+
+## 🛠 3. 서버용 compose — `docker/docker-compose.yml`
+
+```yaml
+services:
+  app:
+    image: ${DOCKER_REPO}:latest
+    env_file: .env
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_started }
+    restart: unless-stopped
+  ai:
+    image: ${DOCKER_AI_REPO}:latest
+    env_file: .env
+    restart: unless-stopped        # ports 없음 = 안에서만
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+  redis:
+    image: redis:7
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    restart: unless-stopped
+  dozzle:
+    image: amir20/dozzle:latest
+    volumes: ["/var/run/docker.sock:/var/run/docker.sock:ro"]
+    ports: ["127.0.0.1:9999:8080"]
+volumes:
+  pgdata:
+```
+
+- 컨테이너끼리는 **서비스 이름**으로 부른다: Spring의 DB 주소는 `jdbc:postgresql://db:5432/...`, Redis는 `redis`, AI는 `http://ai:8000`
+- Dozzle은 내 맥에서 `ssh -L 9999:127.0.0.1:9999 서버` 후 `localhost:9999`로 본다
+
+## 🛠 4. `.env` — 비밀값은 한 파일로
+
+```dotenv
+# docker/.env.example (값은 비우고 커밋)
+DOCKER_REPO=
+DOCKER_AI_REPO=
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+REDIS_PASSWORD=
+SPRING_PROFILES_ACTIVE=prod
+JWT_SECRET=
+KAKAO_CLIENT_ID=
+KAKAO_CLIENT_SECRET=
+AWS_S3_BUCKET=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+OPENAI_API_KEY=
+INTERNAL_TOKEN=
+```
+
+진짜 `.env`는 커밋하지 않는다. 서버에는 CI/CD가 GitHub Secrets에서 꺼내 써 준다 → [CI/CD](/learn/w2-10-cicd)
+
+<Callout type="요약">Dockerfile = 이미지 레시피(멀티스테이지·비root·KST). compose = 컨테이너 배치도(db 볼륨·healthcheck, 포트는 127.0.0.1). 로컬은 db·redis만, 서버는 app·ai·db·redis·dozzle. 비밀값은 .env.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="서버에서 compose를 다시 띄웠더니 가입한 회원이 전부 사라졌다"
+  cause="db 서비스에 볼륨이 없거나, docker compose down -v 로 볼륨까지 지웠다"
+  fix="pgdata 볼륨을 붙이고, down에는 -v를 쓰지 않는다. 매일 pg_dump를 S3에 백업한다"
+/>
