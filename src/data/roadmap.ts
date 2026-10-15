@@ -9,8 +9,8 @@ export type Week = {
 
 export const roadmap: Week[] = [
   { week: 1, period: "10.8 – 10.14", theme: "기획 확정 · 환경 구성", server: "팀 GitHub(Org·규칙·템플릿)·공공데이터 키, HTTP·REST, Docker/Compose로 Spring·FastAPI·Postgres 띄우기", frontend: "디자인 토큰, 홈, MDX 글 1편, Vercel 배포" },
-  { week: 2, period: "10.15 – 10.21", theme: "기반 기능", server: "JWT·httpOnly 쿠키, 카카오 OAuth, Flyway 마이그레이션", frontend: "글 목록을 날짜순·카테고리별로" },
-  { week: 3, period: "10.22 – 10.28", theme: "기록 · 알림", server: "Redis 예약 큐, Web Push(VAPID), Service Worker", frontend: "카테고리 페이지 /category/[slug]" },
+  { week: 2, period: "10.15 – 10.21", theme: "기반 기능", server: "백엔드·PWA 개념, Spring 첫 실행·docker-compose, AI 서버 Start(uv·FastAPI), iPhone Web Push 스파이크, Flyway·카카오 OAuth·JWT", frontend: "글 목록을 날짜순·카테고리별로" },
+  { week: 3, period: "10.22 – 10.28", theme: "기록 · 알림", server: "Redis 예약 큐·알림 스케줄러, Web Push(VAPID) 정식 연결, 식사 시작 → 알림 → 혈당 저장", frontend: "카테고리 페이지 /category/[slug]" },
   { week: 4, period: "10.29 – 11.4", theme: "식사 기록 · AI 보조", server: "FastAPI, Structured Output, pgvector 음식명 매칭", frontend: "⌘K 검색 (클라이언트 상태)" },
   { week: 5, period: "11.5 – 11.11", theme: "정리 · 리포트 · 중간 데모", server: "트랜잭션·인덱스, 리포트 PDF, 평가 데이터", frontend: "용어집 페이지" },
   { week: 6, period: "11.12 – 11.18", theme: "진료 후 · 산후", server: "근거 검증기, 타임아웃·서킷 브레이커", frontend: "다크모드 토글, 퀴즈(useReducer)" },

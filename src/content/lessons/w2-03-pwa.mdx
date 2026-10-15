@@ -1,0 +1,86 @@
+export const meta = {
+  title: "PWA가 뭐야? — 웹사이트가 알림을 보내는 법",
+  week: 2,
+  order: 3,
+  category: "server",
+  born: "당당은 PWA라고 계획서에 썼는데, 사실 PWA가 뭔지 잘 몰랐다. 핵심 기능인 '식사 1시간 뒤 측정 알림'이 PWA 푸시로 와야 하고, 보내는 쪽은 백엔드(나)다.",
+  summary: "PWA = 웹 + manifest + Service Worker + HTTPS. iPhone은 홈 화면에 추가해야 푸시가 온다. 화면 쪽은 프론트, 푸시 발송은 백엔드",
+  minutes: 15,
+  goals: [
+    "PWA를 이루는 세 가지를 병원 비유로 말한다",
+    "iPhone에서 웹 푸시를 받는 조건을 말한다",
+    "Web Push에서 프론트와 백엔드가 각각 맡는 일을 나눈다",
+  ],
+  questions: [
+    "PWA를 한 문장으로",
+    "Service Worker는 왜 필요해?",
+    "iPhone 웹 푸시 조건",
+    "푸시에서 내가(백엔드) 할 일",
+  ],
+  quiz: [
+    { q: "앱이 꺼져 있어도 푸시를 받아 알림을 띄우는 것은?", choices: ["manifest.json", "Service Worker", "HTTPS", "React"], answer: 1, why: "브라우저 뒤에서 대기하는 '야간 당직 직원'." },
+    { q: "iPhone에서 웹 푸시를 받으려면?", choices: ["Safari 탭에서 열어 두기", "홈 화면에 추가한 PWA로 열기", "앱스토어 설치", "블루투스 켜기"], answer: 1, why: "iOS는 홈 화면에 추가한 웹 앱에서만 Web Push를 허용한다. 그래서 M2에 실제 기기 스파이크를 한다." },
+    { q: "PWA 기능(Service Worker 등)이 동작하지 않는 환경은?", choices: ["HTTPS", "localhost", "그냥 http:// 공개 주소", "Vercel 배포 주소"], answer: 2, why: "HTTPS가 개원 허가증. localhost는 개발용으로 예외." },
+    { q: "Web Push에서 백엔드가 맡는 일은?", choices: ["홈 화면 아이콘 만들기", "구독 정보 저장 + VAPID 키로 서명해 알림 발송", "알림 권한 팝업 띄우기", "manifest 작성"], answer: 1, why: "권한 요청·SW 등록은 화면(프론트), 구독 저장·예약·발송은 서버(백엔드)." },
+  ],
+};
+
+## 🎬 장면
+
+당당의 핵심은 **"식사 시작 → 1시간 뒤 '혈당 잴 시간이에요' 알림"**이다. 알림이 안 오면 데모가 안 된다.
+그런데 우리는 앱스토어 앱이 아니라 **PWA**다. 웹사이트가 어떻게 잠금화면에 알림을 띄우지?
+
+## 🗺 PWA = 웹사이트 + 세 가지
+
+<Analogy
+  pairs={[
+    { from: "병원 간판·명함", to: "manifest.json", desc: "앱 이름·아이콘·색. '홈 화면에 추가'하면 앱처럼 보인다." },
+    { from: "야간 당직 직원", to: "Service Worker", desc: "앱이 꺼져 있어도 뒤에서 기다리다가 푸시가 오면 알림을 띄운다." },
+    { from: "개원 허가증", to: "HTTPS", desc: "없으면 위 두 개가 아예 안 돈다(localhost만 예외)." },
+  ]}
+/>
+
+앱스토어 심사도, Swift·Kotlin도 없이 **React + Vite 그대로** 만든다. 화면 쪽은 `vite-plugin-pwa` 플러그인 + 설정 몇 줄이면 된다.
+
+<Callout type="주의">**iPhone은 홈 화면에 추가한 PWA에서만 웹 푸시가 온다.** Safari 탭으로 열면 안 온다. 그래서 개발 계획 M2(10/13~19)에 실제 iPhone으로 먼저 시험(스파이크)한다.</Callout>
+
+## 🗺 누가 뭘 하나
+
+<FlowSim
+  title="Web Push 한 바퀴"
+  startLabel="구독부터"
+  nodes={[
+    { id: "fe", label: "폰 (PWA)", sub: "프론트" },
+    { id: "be", label: "Spring", sub: "백엔드 = 나" },
+    { id: "ps", label: "푸시 서비스", sub: "Apple·Google" },
+  ]}
+  steps={[
+    { at: "fe", say: "알림 권한을 묻고, Service Worker가 '구독'을 만든다(이 폰으로 보내는 주소)." },
+    { at: "be", say: "구독 정보를 받아 DB에 저장한다.", packet: "subscription 저장" },
+    { at: "be", say: "식사 1시간 뒤, 내 VAPID 비밀키로 서명한 메시지를 보낸다.", packet: "VAPID 서명" },
+    { at: "ps", say: "Apple/Google 푸시 서비스가 폰까지 배달한다." },
+    { at: "fe", say: "Service Worker가 깨어나 잠금화면에 '혈당 잴 시간이에요'.", tone: "ok" },
+  ]}
+/>
+
+| 일 | 누가 |
+|---|---|
+| manifest, 아이콘, Service Worker 등록, 권한 요청, 알림 클릭 → 화면 이동 | 프론트 (승민 언니) |
+| VAPID 키 만들기·보관(.env), 구독 저장 API, 알림 예약, 발송 | **백엔드 (나)** |
+
+## 🛠 스파이크 순서 (버리는 폴더에서)
+
+1. `npm create vite` (react-ts) → `vite-plugin-pwa` → Vercel 배포(폰은 HTTPS 필요)
+2. iPhone에서 홈 화면에 추가 → 알림 권한 → 구독 확인
+3. VAPID 키 만들고, 처음엔 작은 스크립트로 푸시 → 다음에 Spring 엔드포인트로
+4. **잠금화면 알림 캡처** = 성공. 안 되면 대안(알림톡 등)을 바로 정한다
+
+<Callout type="요약">PWA = 웹 + 명함(manifest) + 당직(Service Worker) + 허가증(HTTPS). iPhone은 홈 화면 추가 필수. 받는 쪽은 프론트, 보내는 쪽(VAPID·예약·발송)은 백엔드.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="Android에선 알림이 오는데 iPhone에선 안 온다"
+  cause="iPhone에서 Safari 탭으로 열었거나 홈 화면에 추가하지 않았다(또는 iOS가 오래된 버전)"
+  fix="홈 화면에 추가한 아이콘으로 열고 그 안에서 알림 권한을 허용한다. 앱 안에 설치 안내 화면을 둔다"
+/>

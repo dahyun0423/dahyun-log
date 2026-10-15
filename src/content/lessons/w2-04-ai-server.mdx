@@ -1,0 +1,101 @@
+export const meta = {
+  title: "AI 서버 시작 — 빈 저장소에서 FastAPI /health까지",
+  week: 2,
+  order: 4,
+  category: "ai",
+  born: "dangdang-ai 저장소에는 README와 .gitignore뿐이다. AI 서버도 내 담당인데 Python 프로젝트를 저장소부터 세팅해 본 적이 없다. uv도 안 깔려 있었다.",
+  summary: "AI 서버가 당당에서 하는 일, uv로 Python 3.11 프로젝트 만들기, FastAPI /health, .env·.venv 커밋 막기, 첫 커밋 순서",
+  minutes: 20,
+  goals: [
+    "AI 서버가 당당에서 하는 일과 하지 않는 일을 말한다",
+    "uv로 프로젝트를 만들고 FastAPI를 실행한다",
+    ".env와 .venv가 커밋되지 않게 확인한다",
+  ],
+  questions: [
+    "uv를 npm에 비유하면?",
+    "AI 서버가 하지 않는 일(원칙)",
+    "커밋 전 꼭 확인할 두 파일",
+  ],
+  quiz: [
+    { q: "uv는 무엇에 가깝나?", choices: ["Python판 npm(가상환경+패키지 관리)", "Python 에디터", "AI 모델", "DB"], answer: 0, why: "uv add = npm install, uv.lock = package-lock.json, uv run = npx 같은 느낌." },
+    { q: "당당 AI 서버가 하지 않는 일은?", choices: ["사진에서 음식 이름 후보 제안", "진료 메모 정리 보조", "혈당이 정상인지 판단·권고", "후보를 식약처 DB와 매칭"], answer: 2, why: "판단은 코드와 사용자. AI는 기록 보조만 하고, 사용자가 확인한 뒤 저장한다." },
+    { q: "다른 팀 레포에서 실제로 있었던 사고는?", choices: ["README가 없음", ".env·키·가상환경을 커밋", "커밋이 너무 적음", "브랜치가 많음"], answer: 1, why: "커밋 전 git status로 .env, .venv가 안 올라가는지 본다." },
+    { q: "로컬 Python이 3.13인데 계획은 3.11일 때?", choices: ["3.13을 지운다", "uv python pin 3.11 → uv가 3.11을 받아 프로젝트에만 쓴다", "그냥 3.13", "Docker만 쓴다"], answer: 1, why: ".python-version 파일에 고정돼 팀원도 같은 버전을 쓴다." },
+  ],
+};
+
+## 🎬 장면
+
+AI 서버는 **외부 판독실**이다. Spring(원무과)이 "이 사진 무슨 음식이야?"라고 의뢰하면 이름 후보 3개를 돌려준다.
+폰 화면은 판독실에 직접 갈 수 없다. 비용과 보안 때문에 꼭 Spring을 거친다.
+
+<Callout type="핵심">AI는 **기록 보조**다. 혈당이 정상인지 판단하거나 권고하지 않는다. 후보를 주면 사용자가 확인하고 저장한다.</Callout>
+
+## 🗺 Node 세계와 비교
+
+<Analogy
+  pairs={[
+    { from: "npm", to: "uv", desc: "가상환경 + 패키지 관리. 훨씬 빠르다." },
+    { from: "package.json", to: "pyproject.toml", desc: "프로젝트 정보와 의존성 목록." },
+    { from: "package-lock.json", to: "uv.lock", desc: "정확한 버전 고정. 커밋한다." },
+    { from: "node_modules/", to: ".venv/", desc: "받은 패키지가 사는 곳. 커밋 안 한다." },
+    { from: "Express", to: "FastAPI", desc: "API 서버 프레임워크. /docs에 문서가 자동으로 생긴다." },
+  ]}
+/>
+
+## 🛠 손으로
+
+```bash
+brew install uv                     # 10/15 기준 아직 없음
+cd ~/04_Dev/dangdang
+git clone https://github.com/dangdang-2026/dangdang-ai.git
+cd dangdang-ai && git switch develop
+git switch -c feature/initial-setting
+
+uv init                             # pyproject.toml, main.py, .python-version
+uv python pin 3.11                  # 이 프로젝트는 3.11
+uv add fastapi uvicorn pydantic-settings
+```
+
+`main.py`:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(title="dangdang-ai")
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+```
+
+```bash
+uv run uvicorn main:app --reload    # http://localhost:8000/health · /docs
+```
+
+## 🛠 커밋 전에 꼭
+
+```bash
+cat .gitignore | grep -E "^\.env|\.venv"   # 둘 다 있어야 한다. 없으면 추가
+git status                                  # .env, .venv/ 가 목록에 없어야 한다
+```
+
+`.env.example` (값은 비움):
+
+```dotenv
+INTERNAL_TOKEN=          # Spring → AI 서버 호출 확인용
+LLM_API_KEY=             # 생성형 AI API 키
+DATABASE_URL=            # postgresql://...
+```
+
+커밋 순서 추천: `🎉 Start: FastAPI 프로젝트 초기 생성` → `➕ Dependency/Plugin: fastapi, uvicorn, pydantic-settings 추가` → `🔧 Settings: .env.example 추가`
+
+<Callout type="요약">AI 서버 = 외부 판독실(Spring만 의뢰). uv = Python판 npm. uv init → pin 3.11 → add → /health → .env·.venv 커밋 금지 확인.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="git status에 .venv/ 폴더가 수천 개 파일로 뜬다"
+  cause=".gitignore에 .venv가 없다"
+  fix=".gitignore에 .venv/ 와 .env 를 추가하고, 이미 add했다면 git rm -r --cached .venv"
+/>
