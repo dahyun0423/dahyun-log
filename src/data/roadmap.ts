@@ -9,7 +9,7 @@ export type Week = {
 
 export const roadmap: Week[] = [
   { week: 1, period: "10.8 – 10.16(금)", theme: "기획 확정 · 환경 구성", server: "팀 GitHub(Org·규칙·템플릿)·공공데이터 키, 요구사항·MVP 확정, 와이어프레임, 레포 세팅 · 10/16 멘토링", frontend: "디자인 토큰, 홈, MDX 글 1편, Vercel 배포" },
-  { week: 2, period: "10.17 – 10.23(금)", theme: "ERD · 유저 인터뷰 · 회원 기능", server: "백엔드·PWA 개념, Spring 첫 실행·docker-compose, 피그마 → ERD 완성(Flyway V1), 유저 인터뷰, 회원가입·로그인·마이(JWT·카카오), KT Cloud 서버·Nginx·HTTPS·Docker Compose, CI/CD(Docker Hub), S3·공공데이터 ETL v0 · 10/23 멘토링", frontend: "글 목록을 날짜순·카테고리별로" },
+  { week: 2, period: "10.17 – 10.23(금)", theme: "ERD · 유저 인터뷰 · 회원 기능", server: "백엔드·PWA 개념, Spring 첫 실행·docker-compose, 피그마 → ERD 완성(Flyway V1), 유저 인터뷰, 회원가입·로그인·마이(JWT·카카오), AWS EC2·Nginx·HTTPS·Docker Compose, CI/CD(Docker Hub), S3·공공데이터 ETL v0 · 10/23 멘토링", frontend: "글 목록을 날짜순·카테고리별로" },
   { week: 3, period: "10.24 – 10.30(금)", theme: "핵심 루프 ① 식사 → 알림 → 혈당", server: "식사 시작 API, Redis 예약·알림 스케줄러(ShedLock), Web Push(VAPID) 정식 연결, 혈당 저장 API(20~600), 오늘 화면 API, AI 서버 배포 · 10/30 멘토링", frontend: "카테고리 페이지 /category/[slug]" },
   { week: 4, period: "10.31 – 11.6(금)", theme: "핵심 루프 ② · 식사 기록 · AI v1", server: "재알림·늦게 잼, 기록 조회·수정·삭제(audit), 식약처 DB 적재, 사진 → 음식 후보 Top-3(Structured Output), pgvector 음식명 매칭, 첫 배포(CD v1·HTTPS) · 11/6 멘토링", frontend: "⌘K 검색 (클라이언트 상태)" },
   { week: 5, period: "11.7 – 11.13(금)", theme: "진료 · 리포트 · 퍼블리싱 마감", server: "진료일·물어볼 것 API, 리포트 집계 API(그때 기준), 기준 버전 이력, AI 평가셋 점수, FE 퍼블리싱 마감(11/8) · 11/13 멘토링", frontend: "용어집 페이지" },

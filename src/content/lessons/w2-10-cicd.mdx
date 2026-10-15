@@ -40,7 +40,7 @@ export const meta = {
     { id: "gh", label: "GitHub", sub: "main" },
     { id: "ga", label: "Actions", sub: "cd.yml" },
     { id: "hub", label: "Docker Hub", sub: "이미지" },
-    { id: "srv", label: "KT Cloud", sub: "서버" },
+    { id: "srv", label: "EC2", sub: "서버" },
   ]}
   steps={[
     { at: "gh", say: "develop → main이 머지된다." },
@@ -128,7 +128,7 @@ jobs:
 |---|---|
 | `DOCKER_USERNAME` · `DOCKER_PASSWORD` | Docker Hub 아이디 · **Access Token**(비밀번호 말고) |
 | `DOCKER_REPO` | 예: `아이디/dangdang-be` |
-| `SERVER_HOST` · `SERVER_USER` | KT Cloud 공인 IP · 접속 계정 |
+| `SERVER_HOST` · `SERVER_USER` | EC2 탄력적 IP · `ubuntu` |
 | `SERVER_SSH_KEY` | 배포 전용 키의 **개인키** 전체 (공개키는 서버 `~/.ssh/authorized_keys`) |
 | `ENV_PROD` | 서버 `.env` 내용 전체 → [Docker 레슨](/learn/w2-09-docker-compose)의 `.env.example` 참고 |
 
@@ -149,6 +149,6 @@ jobs:
 
 <Diagnosis
   symptom="cd.yml이 ssh 단계에서 'ssh: handshake failed'로 실패한다"
-  cause="SERVER_SSH_KEY에 공개키를 넣었거나, 서버 authorized_keys에 짝 공개키가 없거나, 방화벽 22가 GitHub Actions에 막혀 있다"
+  cause="SERVER_SSH_KEY에 공개키를 넣었거나, 서버 authorized_keys에 짝 공개키가 없거나, 보안그룹 22를 내 IP만 열어 GitHub Actions가 막혀 있다"
   fix="개인키 전체(BEGIN~END)를 시크릿에 넣고, 공개키를 서버에 등록한다. 22를 팀 IP만 열었다면 배포 방식(Actions IP 허용 또는 서버에서 pull)을 정한다"
 />
