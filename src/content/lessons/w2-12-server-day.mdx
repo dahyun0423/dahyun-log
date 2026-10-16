@@ -109,8 +109,19 @@ server {
 |---|---|
 | `http://dang-dang.site` | 301 → https로 넘김 |
 | `https://dang-dang.site` · `www` | 200 🔒 (Let's Encrypt, 자동 갱신) |
-| `/actuator/health` | 502 — **아직 Spring을 배포하지 않아서 정상** (다음: 자동 배포) |
+| `/actuator/health` | (오전) 502 → (오후) 자동 배포 뒤 **UP** |
 | dangdang-be 로컬 | Postgres로 바꾸고 테스트 통과, Docker 이미지 health **UP** |
+
+## 🛠 오후에 이어서 한 것
+
+| 한 것 | 막힌 곳 → 해결 | 결과 |
+|---|---|---|
+| dangdang-be: MySQL→**PostgreSQL**, Dockerfile·compose, CI·CD | `gradlew` 실행 권한이 빠져 있었음 → 권한 추가 | 로컬 테스트·이미지 health UP |
+| Docker Hub 토큰(90일)·배포 전용 ssh 키·GitHub Secrets 7개 | 22번을 '내 IP'만 열어서 GitHub이 못 들어옴 → **모두 허용 + 키 전용 + fail2ban** | |
+| 첫 자동 배포 | 워크플로는 ✅인데 컨테이너 0개 → **비공개 이미지인데 서버가 Docker Hub 로그인 안 함 + 스크립트에 `set -e` 없음** → 수정 PR | 재배포 → **health UP** |
+| S3 `dang-dang-site-prod` + **IAM 역할**(이 버킷만) | — | 서버가 키 없이 업로드 OK, 다른 버킷은 AccessDenied |
+| Dozzle → **https://log.dang-dang.site** | 선배처럼 Nginx **Basic Auth**, 비밀번호는 내가 터미널에서 직접 설정 | 비번 없으면 401 |
+| **Swagger** https://dang-dang.site/swagger-ui/index.html | springdoc 3.1.1(Boot 4.1용), 같은 Basic Auth | 비번 없으면 401 |
 
 <Callout type="요약">새 AWS는 '프로젝트 방식' → 서울을 쓰려면 업그레이드·고급 기능·SCP·표시 리전 4단계. EC2는 t3.medium·암호화·22는 내 IP·탄력적 IP. 서버엔 Docker·Nginx, 도메인은 가비아 A 레코드, HTTPS는 certbot 한 줄.</Callout>
 
