@@ -1,0 +1,123 @@
+export const meta = {
+  title: "서버 만든 날 — AWS 가입부터 https://dang-dang.site 까지 (10/16 실제 기록)",
+  week: 2,
+  order: 12,
+  category: "devlog",
+  born: "10/16 하루 만에 AWS 새 계정을 만들고, 서울 리전에 서버를 띄우고, 도메인을 사서 자물쇠(HTTPS)까지 달았다. 중간에 '서울 리전 사용 불가', 'explicit deny', 'AMI가 유효하지 않음' 같은 낯선 에러를 여러 번 만났다. 다음에 또 할 때 그대로 따라 하려고 순서와 함정을 남긴다.",
+  summary: "새 AWS(프로젝트 방식) 가입 → 예산·MFA → Paid 업그레이드·고급 기능 → SCP에 서울 추가 → EC2·탄력적 IP → ssh·Docker·Nginx → 가비아 DNS → certbot HTTPS. 막힌 곳 6개와 해결",
+  minutes: 20,
+  goals: [
+    "오늘 서버를 만든 순서를 처음부터 끝까지 말한다",
+    "새 AWS 계정에서 서울을 쓰려면 무엇을 풀어야 하는지 안다",
+    "막혔던 에러 문구를 보고 원인을 떠올린다",
+  ],
+  questions: [
+    "Free 플랜 새 계정에서 서울 EC2가 안 만들어진 이유 3가지",
+    "SCP가 뭐고, 어디를 고쳤나",
+    "ssh dangdang 은 어떻게 되는 건가",
+    "HTTPS 인증서는 어떻게 갱신되나",
+  ],
+  quiz: [
+    { q: "새 AWS 계정(Free 플랜)에서 EC2를 서울에 만들려 했더니 '리전 사용 불가'가 떴다. 가장 먼저 할 일은?", choices: ["계정 삭제", "플랜 업그레이드 + 고급 기능 활성화(가입 때 정해진 리전 하나로 묶여 있음)", "다른 브라우저", "시드니에 만든다"], answer: 1, why: "Free 플랜 프로젝트는 한 리전(우리는 시드니)으로 한정된다." },
+    { q: "'explicit deny in a service control policy'는 무슨 뜻?", choices: ["비밀번호 틀림", "조직이 계정 위에 건 금지 규칙(SCP)이 막았다", "인터넷 끊김", "크레딧 부족"], answer: 1, why: "SCP의 RegionFloor 허용 목록에 서울(ap-northeast-2)이 없어서였다. 목록에 한 줄 추가로 해결." },
+    { q: "서울에서 'AMI ID가 유효하지 않습니다'가 뜬 이유는?", choices: ["Ubuntu가 사라져서", "화면에 미리 골라진 이미지가 시드니용이라서 — 정책을 푼 뒤 Ubuntu를 다시 고르면 된다", "디스크 부족", "키 페어 없음"], answer: 1, why: "AMI는 리전마다 ID가 다르다." },
+    { q: "탄력적 IP를 할당만 하고 서버에 연결하지 않으면?", choices: ["무료", "계속 요금이 나간다 → 할당하면 바로 연결, 서버 지울 땐 IP도 릴리스", "자동 삭제", "속도가 빨라진다"], answer: 1, why: "안 쓰는 공인 IP도 과금된다." },
+    { q: "https 인증서(Let's Encrypt)는 90일짜리다. 우리는 어떻게 하나?", choices: ["90일마다 손으로", "certbot이 깔아 둔 타이머(certbot.timer)가 자동 갱신", "갱신 안 함", "유료로 바꾼다"], answer: 1, why: "certbot renew --dry-run 으로 갱신 리허설도 할 수 있다." },
+  ],
+};
+
+## 🎬 장면
+
+아침에 "서버 언제 줘?"를 고민하다가 결론: **KT Cloud는 발표 2주 전에야 나온다 → AWS로 지금 시작.**
+그리고 저녁 전에 브라우저 주소창에 🔒 **https://dang-dang.site** 가 떴다.
+
+## 🗺 오늘 한 순서
+
+<FlowSim
+  title="하루 만에 서버까지"
+  startLabel="시작"
+  nodes={[
+    { id: "acc", label: "AWS 계정", sub: "가입·예산·MFA" },
+    { id: "reg", label: "서울 열기", sub: "업그레이드·SCP" },
+    { id: "ec2", label: "EC2", sub: "서버·고정 IP" },
+    { id: "in", label: "서버 안", sub: "Docker·Nginx" },
+    { id: "dom", label: "도메인", sub: "DNS·HTTPS" },
+  ]}
+  steps={[
+    { at: "acc", say: "학교 메일로 새 계정(크레딧 $100). 예산 알림 $20 → 온보딩 과제로 크레딧 +$20. MFA는 '프로필 › 보안'에서." },
+    { at: "reg", say: "Free 플랜은 시드니만. Paid 업그레이드(크레딧 유지) → 고급 기능 활성화 → SCP 허용 목록에 서울 추가 → 표시되는 리전에 서울 추가.", tone: "error", packet: "막힘 4번" },
+    { at: "ec2", say: "dangdang-prod: t3.medium · Ubuntu · 30GB 암호화 · 보안그룹 22(내 IP)/80/443 → 탄력적 IP 43.203.51.14 연결." },
+    { at: "in", say: "ssh 접속 → 시간대 KST → Docker·Compose·Nginx 설치 → http://IP 200.", packet: "ssh dangdang" },
+    { at: "dom", say: "가비아에서 dang-dang.site → A 레코드 @·www → Nginx에 도메인 → certbot으로 HTTPS.", tone: "ok", packet: "🔒 https" },
+  ]}
+/>
+
+## 🛠 막힌 곳 6개
+
+| # | 화면에 뜬 말 | 원인 | 해결 |
+|---|---|---|---|
+| 1 | 'Budgets'가 안 보임 | 콘솔이 한국어라 이름이 **'예산'** | 검색창에 `예산` |
+| 2 | 보안 자격 증명: '콘텐츠를 불러올 수 없음' | 새 AWS는 **프로젝트 방식** — 루트로 직접 들어가지 않는다 | MFA는 계정 메뉴 › **프로필** › 보안 |
+| 3 | 서울 리전 사용 불가 | Free 플랜 프로젝트는 **가입 때 리전(시드니) 하나만** | Paid 업그레이드 + **고급 기능 활성화** (관리 계정 이메일은 AWS에 안 쓴 메일) |
+| 4 | `explicit deny in a service control policy` | 조직 정책(SCP) `RegionFloor` 허용 목록에 서울 없음 | 관리 계정 › Organizations › 정책 편집 → `"ap-northeast-2",` **한 줄 추가** |
+| 5 | AMI ID가 유효하지 않음 | 미리 골라진 이미지가 **시드니용** | Ubuntu를 다시 클릭 |
+| 6 | 아시아 태평양(서울) 리전 제한됨 | 콘솔 **표시되는 리전**에 서울 없음 | 통합 설정 › 계정 설정 › 표시되는 리전에 서울 체크 |
+
+<Callout type="주의">**고급 기능 활성화는 되돌릴 수 없고 지출 한도가 사라진다.** 그 뒤로는 $20 예산 알림 메일이 유일한 경보. 학교·개인 메일 스팸함까지 본다.</Callout>
+
+## 🛠 서버 안에서 친 것 (그대로 다시 쓸 수 있게)
+
+```bash
+# 내 맥: 키 정리 + 단축키
+mv ~/Downloads/dangdang-key.pem ~/.ssh/ && chmod 400 ~/.ssh/dangdang-key.pem
+# ~/.ssh/config 에 추가
+# Host dangdang
+#   HostName 43.203.51.14
+#   User ubuntu
+#   IdentityFile ~/.ssh/dangdang-key.pem
+ssh dangdang
+
+# 서버
+sudo timedatectl set-timezone Asia/Seoul
+sudo apt-get update
+sudo apt-get install -y docker.io docker-compose-v2 nginx certbot python3-certbot-nginx
+sudo usermod -aG docker ubuntu
+sudo systemctl enable --now docker nginx
+
+# 가비아 DNS: A @ → 43.203.51.14, A www → 43.203.51.14 (몇 분 만에 퍼짐)
+dig +short dang-dang.site          # 43.203.51.14 나오면 OK
+
+# Nginx 사이트(/etc/nginx/sites-available/dangdang) 만들고
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d dang-dang.site -d www.dang-dang.site --redirect
+```
+
+```nginx
+server {
+    server_name dang-dang.site www.dang-dang.site;
+    root /var/www/dangdang;                       # React 빌드가 들어갈 자리
+    location / { try_files $uri $uri/ /index.html; }
+    location /api/ { proxy_pass http://127.0.0.1:8080; }          # Spring
+    location = /actuator/health { proxy_pass http://127.0.0.1:8080; }
+    # 443·인증서 부분은 certbot이 자동으로 채워 줬다
+}
+```
+
+## 🗺 확인한 것
+
+| 확인 | 결과 |
+|---|---|
+| `http://dang-dang.site` | 301 → https로 넘김 |
+| `https://dang-dang.site` · `www` | 200 🔒 (Let's Encrypt, 자동 갱신) |
+| `/actuator/health` | 502 — **아직 Spring을 배포하지 않아서 정상** (다음: 자동 배포) |
+| dangdang-be 로컬 | Postgres로 바꾸고 테스트 통과, Docker 이미지 health **UP** |
+
+<Callout type="요약">새 AWS는 '프로젝트 방식' → 서울을 쓰려면 업그레이드·고급 기능·SCP·표시 리전 4단계. EC2는 t3.medium·암호화·22는 내 IP·탄력적 IP. 서버엔 Docker·Nginx, 도메인은 가비아 A 레코드, HTTPS는 certbot 한 줄.</Callout>
+
+## ✍️ 내 말로
+
+<Diagnosis
+  symptom="키 페어를 만들려는데 'is not authorized … with an explicit deny in a service control policy'"
+  cause="조직(Organizations)의 SCP가 이 리전을 금지하고 있다 — 허용 목록에 서울이 없다"
+  fix="관리 계정 › Organizations › 서비스 제어 정책 › RegionFloor 허용 목록에 ap-northeast-2를 추가하고 저장한 뒤 다시 시도한다"
+/>
