@@ -143,6 +143,8 @@ jobs:
 | 앱이 켜졌다 꺼짐 | `.env` 빠진 값(JWT_SECRET 등), DB 비밀번호 불일치 |
 | 되돌리기 | 서버에서 compose의 `image`를 이전 `:sha`로 바꿔 `up -d` |
 
+> 흐름을 그림·비유로 먼저 보고 싶으면 → [자동 배포를 그림으로](/learn/w2-13-pipeline-picture)
+
 <Callout type="요약">CI = PR마다 빌드·테스트(우리는 테스트 생략 안 함). CD = main 머지 → Docker Hub(latest·sha) → scp docker/ → ssh: .env 쓰기 → compose pull·up·prune. 시크릿은 Environment production에.</Callout>
 
 ## ✍️ 내 말로
